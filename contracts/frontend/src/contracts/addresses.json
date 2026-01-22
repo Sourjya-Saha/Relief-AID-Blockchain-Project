@@ -1,0 +1,11 @@
+{
+  "80002": {
+    "ReliefUSD": "0x08c7b11102DBe4F861fB61DA9885025267ad8D28",
+    "ReliefManager": "0xA9D9a1991e20362EB1D3Ee9c8d67f8E5797b5fdC",
+    "DonationTreasury": "0x458B11B7562D0ed52c3428f0E60B3614eD1d6131",
+    "deployedBy": "0xe1af881dbA4E9D4d08e6ec414C3a93aF149D705D",
+    "network": "amoy",
+    "rate": 1000,
+    "timestamp": "2026-01-18T13:28:58.607Z"
+  }
+}
