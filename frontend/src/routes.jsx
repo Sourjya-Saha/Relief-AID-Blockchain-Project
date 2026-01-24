@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./hooks/Web3Hooks";
 import { Header, Footer, Navbar, LoadingSpinner } from "./components/Common";
 
@@ -30,10 +30,17 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 // ==================== APP ROUTES ====================
 export default function AppRoutes() {
+  const location = useLocation();
+
+  // Only hide navbar on landing page
+  const hideNavbar = location.pathname === "/";
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <Navbar />
+      
+      {/* Show Navbar on all pages except landing */}
+      {!hideNavbar && <Navbar />}
 
       <main className="flex-grow">
         <Routes>

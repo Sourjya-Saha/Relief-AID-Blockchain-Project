@@ -1,4 +1,4 @@
-import { useState, useEffect, Component } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ethers } from "ethers";
 
@@ -20,8 +20,6 @@ import DonationTreasuryABI from "../contracts/DonationTreasury.json";
 import addresses from "../contracts/addresses.json";
 
 // ==================== LANDING PAGE ====================
-
-
 export const LandingPage = () => {
   const {
     account,
@@ -57,25 +55,34 @@ export const LandingPage = () => {
   const [donationAmount, setDonationAmount] = useState("");
   const [donating, setDonating] = useState(false);
 
-  const [txStatus, setTxStatus] = useState(null); // pending/success/error
+  const [txStatus, setTxStatus] = useState(null);
   const [txHash, setTxHash] = useState(null);
   const [txError, setTxError] = useState(null);
 
-  // -----------------------------
+  // Mouse position for parallax effect
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMousePos({
+        x: (e.clientX / window.innerWidth - 0.5) * 20,
+        y: (e.clientY / window.innerHeight - 0.5) * 20,
+      });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
   // Load Stats
-  // -----------------------------
   useEffect(() => {
     if (!reliefManager?.readContract) return;
     if (!reliefUSD?.readContract) return;
-
     loadStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reliefManager?.readContract, reliefUSD?.readContract]);
 
   const loadStats = async () => {
     try {
       setLoadingStats(true);
-
       const systemStats = await reliefManager.readContract.getSystemStats();
       const totalSupply = await reliefUSD.readContract.totalSupply();
 
@@ -100,9 +107,6 @@ export const LandingPage = () => {
     }
   };
 
-  // -----------------------------
-  // Donation: Connect Wallet
-  // -----------------------------
   const handleDonateConnectWallet = async () => {
     try {
       setTxStatus(null);
@@ -115,13 +119,11 @@ export const LandingPage = () => {
         return;
       }
 
-      // ✅ connect once
       const addr = await connectWallet();
 
-      // ✅ switch network if required
       if (!isCorrectNetwork) {
         await switchToCorrectNetwork();
-        await connectWallet(); // refresh provider/signer/account after switching
+        await connectWallet();
       }
 
       console.log("✅ Donation wallet connected:", addr);
@@ -132,9 +134,6 @@ export const LandingPage = () => {
     }
   };
 
-  // -----------------------------
-  // Debug: role check
-  // -----------------------------
   useEffect(() => {
     const run = async () => {
       try {
@@ -142,7 +141,6 @@ export const LandingPage = () => {
         if (!donationTreasuryAddress) return;
 
         const MINTER_ROLE = ethers.keccak256(ethers.toUtf8Bytes("MINTER_ROLE"));
-
         const hasRole = await reliefUSD.readContract.hasRole(
           MINTER_ROLE,
           donationTreasuryAddress
@@ -153,13 +151,9 @@ export const LandingPage = () => {
         console.log("Role check failed:", e);
       }
     };
-
     run();
   }, [reliefUSD?.readContract, donationTreasuryAddress]);
 
-  // -----------------------------
-  // Donate POL
-  // -----------------------------
   const handleDonate = async () => {
     try {
       if (!account) {
@@ -184,50 +178,32 @@ export const LandingPage = () => {
 
       const amountWei = ethers.parseEther(donationAmount.toString());
 
-      console.log("💛 Donate Debug:");
-      console.log("👤 Donor:", account);
-      console.log("🏦 Treasury:", donationTreasuryAddress);
-      console.log("💰 Amount POL:", donationAmount);
-      console.log("💰 Amount Wei:", amountWei.toString());
-
-      // ✅ Check chain
       if (!provider) throw new Error("Provider not ready");
       const net = await provider.getNetwork();
-      console.log("🌐 ChainId:", Number(net.chainId));
 
       if (Number(net.chainId) !== 80002) {
         throw new Error("Wrong network. Please switch to Polygon Amoy (80002).");
       }
 
-      // ✅ Check donate() existence
       const hasDonateFn = DonationTreasuryABI?.abi?.some(
         (f) => f.type === "function" && f.name === "donate"
       );
 
-      // ✅ Legacy gasPrice (NO eth_maxPriorityFeePerGas)
       const gasPrice = await provider.send("eth_gasPrice", []);
-      console.log("⛽ legacy gasPrice:", gasPrice.toString());
 
       let tx;
 
       if (hasDonateFn && donationTreasury?.writeContract?.donate) {
-        // ✅ simulate
-        console.log("🧪 Simulating donate()...");
         await donationTreasury.writeContract.donate.staticCall({
           value: amountWei,
         });
-        console.log("✅ Simulation PASSED");
 
-        // ✅ send
-        console.log("📝 Sending donation tx via donate()...");
         tx = await donationTreasury.writeContract.donate({
           value: amountWei,
           gasLimit: 300000,
           gasPrice,
         });
       } else {
-        // fallback: direct send POL to contract
-        console.log("⚠️ donate() not found. Fallback sending POL...");
         if (!signer) throw new Error("Signer not available");
 
         tx = await signer.sendTransaction({
@@ -238,18 +214,14 @@ export const LandingPage = () => {
         });
       }
 
-      console.log("⛓️ TX hash:", tx.hash);
       setTxHash(tx.hash);
-
-      const receipt = await tx.wait();
-      console.log("✅ Confirmed in block:", receipt.blockNumber);
+      await tx.wait();
 
       setTxStatus("success");
       setDonationAmount("");
-
       await loadStats();
     } catch (err) {
-      console.error("❌ Donation failed FULL ERROR:", err);
+      console.error("❌ Donation failed:", err);
 
       const msg =
         err?.reason ||
@@ -266,182 +238,298 @@ export const LandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-50">
-      {/* Hero Section */}
-      <section className="pt-20 pb-16 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="w-24 h-24 bg-primary-600 rounded-full flex items-center justify-center mx-auto mb-8">
-            <span className="text-4xl text-white font-bold">R</span>
-          </div>
+    <div className="min-h-screen bg-[#0B0F14] text-white relative overflow-hidden">
+      {/* Ambient Background Effects */}
+      <div className="fixed inset-0 opacity-30 pointer-events-none">
+        <div
+          className="absolute top-0 left-1/4 w-64 h-64 md:w-96 md:h-96 bg-cyan-500/20 rounded-full blur-3xl"
+          style={{
+            transform: `translate(${mousePos.x}px, ${mousePos.y}px)`,
+            transition: "transform 0.3s ease-out",
+          }}
+        />
+        <div
+          className="absolute bottom-0 right-1/4 w-64 h-64 md:w-96 md:h-96 bg-emerald-500/20 rounded-full blur-3xl"
+          style={{
+            transform: `translate(${-mousePos.x}px, ${-mousePos.y}px)`,
+            transition: "transform 0.3s ease-out",
+          }}
+        />
+      </div>
 
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            Relief Aid System
+      {/* Grid Pattern */}
+      <div
+        className="fixed inset-0 opacity-[0.02] pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px),
+                           linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px)`,
+          backgroundSize: "50px 50px",
+        }}
+      />
+
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-16 sm:py-20">
+        <div className="max-w-6xl mx-auto text-center relative z-10 w-full">
+          {/* Main Headline */}
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 sm:mb-8 tracking-tight">
+            <span className="bg-gradient-to-br from-white via-cyan-100 to-emerald-100 bg-clip-text text-transparent">
+              Relief Infrastructure
+            </span>
+            <br />
+            <span className="text-gray-400 text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl">
+              for the Real World
+            </span>
           </h1>
 
-          <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Transparent decentralized emergency relief distribution on Polygon Amoy.
+          {/* Subtext */}
+          <p className="text-base sm:text-lg md:text-xl font-mono text-gray-400 mb-12 sm:mb-16 max-w-2xl mx-auto font-light">
+            Transparent. Verifiable. On-chain.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-2xl mx-auto">
-            <Link to="/login" className="btn-primary text-lg py-4 px-8">
-              Login
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
+            <Link
+              to="/login"
+              className="w-full sm:w-auto group relative px-8 py-4 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-xl font-semibold overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/50 hover:scale-105"
+            >
+              <span className="relative font-mono z-10">Launch App</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </Link>
 
-            <Link to="/audit" className="btn-secondary text-lg py-4 px-8">
-              View Audit Trail
+            <Link
+              to="/audit"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl font-semibold border border-gray-700 hover:border-cyan-500/50 bg-gray-900/50 backdrop-blur-sm transition-all duration-300 font-mono hover:bg-gray-800/50"
+            >
+              View Public Audit
             </Link>
+          </div>
+        </div>
+
+        {/* Floating Data Fragments - Hidden on mobile */}
+        <div className="absolute inset-0 pointer-events-none hidden md:block">
+          <div className="absolute top-1/4 left-1/4 text-xs text-cyan-500/30 font-mono animate-pulse">
+            0x7f...a4c2
+          </div>
+          <div className="absolute top-1/3 right-1/4 text-xs text-emerald-500/30 font-mono animate-pulse">
+            Block #847293
+          </div>
+          <div className="absolute bottom-1/3 left-1/3 text-xs text-cyan-500/30 font-mono animate-pulse">
+            Verified
           </div>
         </div>
       </section>
 
-      {/* Donation Section */}
-      <section className="py-12 px-4">
-        <div className="max-w-3xl mx-auto card p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            💛 Donate to Relief Fund
-          </h2>
-
-          <p className="text-gray-600 mb-6">
-            Anyone can donate POL to support emergency aid distribution. Funds are stored
-            on-chain in the DonationTreasury contract.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Donation Amount (POL)
-              </label>
-
-              <input
-                type="number"
-                value={donationAmount}
-                onChange={(e) => setDonationAmount(e.target.value)}
-                placeholder="e.g. 0.1"
-                className="input w-full"
-                min="0"
-                step="0.01"
-              />
-
-              <p className="text-xs text-gray-400 mt-2">
-                Network: Polygon Amoy (Chain ID: 80002)
-              </p>
-            </div>
-
-            {!account ? (
-              <button
-                onClick={handleDonateConnectWallet}
-                className="btn-primary w-full py-3"
-              >
-                🦊 Connect Wallet
-              </button>
-            ) : !isCorrectNetwork ? (
-              <button
-                onClick={switchToCorrectNetwork}
-                className="btn-secondary w-full py-3"
-              >
-                🔁 Switch to Amoy
-              </button>
-            ) : (
-              <button
-                onClick={handleDonate}
-                disabled={donating}
-                className="btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {donating ? "Donating..." : "Donate Now"}
-              </button>
-            )}
-          </div>
-
-          <div className="mt-6">
-            <TransactionStatus status={txStatus} hash={txHash} error={txError} />
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      {loadingStats && <LoadingSpinner text="Loading stats..." />}
+      {/* Live System Snapshot */}
+      {loadingStats && <LoadingSpinner text="Initializing protocol..." />}
 
       {stats && !loadingStats && (
-        <section className="py-20 bg-white">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-              <div>
-                <div className="text-4xl font-bold text-primary-600 mb-2">
-                  {stats.activeBeneficiaries}
-                </div>
-                <div className="text-gray-600">Active Beneficiaries</div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Registered: {stats.totalBeneficiariesRegistered}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-4xl font-bold text-green-600 mb-2">
-                  {stats.activeMerchants}
-                </div>
-                <div className="text-gray-600">Active Merchants</div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Registered: {stats.totalMerchantsRegistered}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-4xl font-bold text-purple-600 mb-2">
-                  {parseFloat(stats.totalDistributed).toFixed(0)}
-                </div>
-                <div className="text-gray-600">RUSD Distributed</div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Total Spent: {parseFloat(stats.totalSpent).toFixed(0)} RUSD
-                </div>
-              </div>
-
-              <div>
-                <div className="text-4xl font-bold text-orange-600 mb-2">
-                  {stats.totalTransactions}
-                </div>
-                <div className="text-gray-600">Transactions</div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Total Spent: {parseFloat(stats.totalSpent).toFixed(0)} RUSD
-                </div>
-              </div>
+        <section className="relative pb-20 sm:pb-32 px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-12 sm:mb-16">
+              <p className="text-xs sm:text-sm uppercase tracking-wider text-cyan-400 mb-4 font-mono">
+                Live System Status
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-100">
+                Protocol Running
+              </h2>
             </div>
 
-            <div className="mt-10 text-center text-gray-500 text-sm">
-              Total Supply (RUSD):{" "}
-              <span className="font-semibold">
-                {parseFloat(stats.totalSupply).toFixed(2)}
-              </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <StatCard
+                value={parseFloat(stats.totalDistributed).toFixed(0)}
+                label="Funds Secured"
+                unit="RUSD"
+                color="cyan"
+                sublabel={`Total Supply: ${parseFloat(stats.totalSupply).toFixed(0)}`}
+              />
+              <StatCard
+                value={parseFloat(stats.totalSpent).toFixed(0)}
+                label="Aid Released"
+                unit="RUSD"
+                color="emerald"
+                sublabel={`${stats.totalTransactions} transactions`}
+              />
+              <StatCard
+                value={stats.activeBeneficiaries + stats.activeMerchants}
+                label="Verified Entities"
+                color="cyan"
+                sublabel={`${stats.activeBeneficiaries} beneficiaries, ${stats.activeMerchants} merchants`}
+              />
             </div>
           </div>
         </section>
       )}
 
-      {/* Features Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">How It Works</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Fully decentralized aid distribution powered by smart contracts
+      {/* Donation Section */}
+      <section className="relative py-20 sm:py-32 px-4 sm:px-6 border-t border-gray-800/50">
+        <div className="max-w-3xl mx-auto">
+          <div className="p-6 sm:p-8 md:p-12">
+            <div className="mb-8">
+              <p className="text-xs sm:text-sm uppercase tracking-wider text-cyan-400 mb-2 font-mono">
+                Contribute Capital
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4">Fund Protocol Treasury</h2>
+              <p className="text-sm sm:text-base text-gray-400">
+                Direct on-chain contribution to DonationTreasury contract.
+                Polygon Amoy (80002).
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-xs sm:text-sm font-mono text-gray-400 mb-3 uppercase tracking-wider">
+                  Amount (POL)
+                </label>
+                <input
+                  type="number"
+                  value={donationAmount}
+                  onChange={(e) => setDonationAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-gray-950/50 border border-gray-700 rounded-xl px-4 sm:px-6 py-3 sm:py-4 text-xl sm:text-2xl font-mono focus:outline-none focus:border-cyan-500 transition-colors"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+
+              {!account ? (
+                <button
+                  onClick={handleDonateConnectWallet}
+                  className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-xl font-semibold hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 text-sm sm:text-base"
+                >
+                  Connect Wallet
+                </button>
+              ) : !isCorrectNetwork ? (
+                <button
+                  onClick={switchToCorrectNetwork}
+                  className="w-full px-6 sm:px-8 py-3 sm:py-4 border border-cyan-500 rounded-xl font-semibold hover:bg-cyan-500/10 transition-all duration-300 text-sm sm:text-base"
+                >
+                  Switch to Polygon Amoy
+                </button>
+              ) : (
+                <button
+                  onClick={handleDonate}
+                  disabled={donating}
+                  className="w-full px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-xl font-semibold hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-mono"
+                >
+                  {donating ? "Processing..." : "Execute Transaction"}
+                </button>
+              )}
+
+              <div className="mt-6">
+                <TransactionStatus
+                  status={txStatus}
+                  hash={txHash}
+                  error={txError}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Protocol Flow */}
+      <section className="relative py-20 sm:py-36 px-4 sm:px-6 border-t border-gray-800/60 bg-[#0B0F14]">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-16 sm:mb-24">
+            <p className="text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-cyan-400 font-mono mb-4">
+              Protocol Architecture
+            </p>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+              Capital Flow
+            </h2>
+            <p className="text-sm sm:text-base md:text-lg text-gray-500">
+              Deterministic. Verifiable. On-chain.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <FeatureCard
-              icon="👥"
-              title="1. Register Beneficiaries"
-              description="Admin verifies and registers beneficiaries on-chain with IPFS profiles"
-            />
-            <FeatureCard
-              icon="💰"
-              title="2. Distribute Aid"
-              description="Mint and distribute ReliefUSD stablecoins with category spending limits"
-            />
-            <FeatureCard
-              icon="🛒"
-              title="3. Secure Spending"
-              description="Beneficiaries spend only at verified merchants within approved limits"
-            />
+          {/* Flow Container */}
+          <div className="relative max-w-3xl mx-auto">
+            {/* Vertical spine - Now visible on all screens */}
+            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-gray-800 to-transparent -translate-x-1/2" />
+
+            {[
+              {
+                title: "Donation Received",
+                subtitle: "Capital Entry",
+                desc: "POL enters the DonationTreasury and is locked on-chain.",
+                icon: "⬇",
+              },
+              {
+                title: "Escrow & Mint",
+                subtitle: "Smart Contract Enforcement",
+                desc: "RUSD is minted at protocol rate and routed to ReliefManager.",
+                icon: "⚙",
+              },
+              {
+                title: "Identity Verification",
+                subtitle: "Whitelisted Actors",
+                desc: "Beneficiaries and merchants are validated via AccessControl.",
+                icon: "✓",
+              },
+              {
+                title: "Redemption Executed",
+                subtitle: "On / Off-chain Settlement",
+                desc: "RUSD burned. POL released automatically or via admin approval.",
+                icon: "⇄",
+              },
+              {
+                title: "Audit & Finality",
+                subtitle: "Immutable Record",
+                desc: "Transaction hash, timestamp, and state permanently recorded.",
+                icon: "∞",
+              },
+            ].map((step, i) => (
+              <div key={i} className="relative flex items-start mb-16 sm:mb-20 md:mb-24 last:mb-0">
+                {/* Center node - Same on all screens */}
+                <div className="absolute left-1/2 -translate-x-1/2 z-10">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl sm:rounded-2xl bg-[#0F1623] border border-gray-800 flex items-center justify-center text-lg sm:text-xl text-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.1)]">
+                    {step.icon}
+                  </div>
+                </div>
+
+                {/* Content card - Alternating sides on all screens */}
+                <div className={`w-[calc(50%-2rem)] sm:w-[calc(50%-2.5rem)] md:w-[calc(50%-3rem)] ${
+                  i % 2 === 0 
+                    ? "ml-auto text-left pl-8 sm:pl-10 md:pl-12" 
+                    : "mr-auto text-right pr-8 sm:pr-10 md:pr-12"
+                }`}>
+                  <div className="bg-[#0F1623]/80 backdrop-blur border border-gray-800 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 hover:border-cyan-500/40 transition-colors">
+                    <p className="text-xs text-cyan-400 font-mono mb-1 sm:mb-2">
+                      {step.subtitle}
+                    </p>
+                    <h3 className="text-sm sm:text-base md:text-lg font-semibold text-white mb-1 sm:mb-2">
+                      {step.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-gray-400 leading-relaxed font-mono">
+                      {step.desc}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final Statement */}
+      <section className="relative py-20 sm:py-32 px-4 sm:px-6 border-t border-gray-800/50">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-8 sm:mb-12 leading-tight">
+            When everything breaks,
+            <br />
+            <span className="bg-gradient-to-br from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+              truth must not.
+            </span>
+          </h2>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
+            <Link
+              to="/login"
+              className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-xl font-mono font-semibold hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300"
+            >
+              Enter Platform
+            </Link>
           </div>
         </div>
       </section>
@@ -449,19 +537,24 @@ export const LandingPage = () => {
   );
 };
 
-
-const FeatureCard = ({ icon, title, description }) => (
-  <div className="group">
-    <div className="card p-8 hover:shadow-xl transition-all group-hover:-translate-y-2">
-      <div className="text-4xl mb-6">{icon}</div>
-      <h3 className="text-2xl font-bold text-gray-900 mb-4">{title}</h3>
-      <p className="text-gray-600 leading-relaxed">{description}</p>
+const StatCard = ({ value, label, unit, color, sublabel }) => (
+  <div className="group relative bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-4 sm:p-6 hover:border-cyan-500/50 transition-all duration-300">
+    <div className="flex items-baseline gap-2 mb-2">
+      <div
+        className={`text-2xl sm:text-3xl md:text-4xl font-bold ${
+          color === "cyan" ? "text-cyan-400" : "text-emerald-400"
+        }`}
+      >
+        {value}
+      </div>
+      {unit && <span className="text-sm sm:text-base md:text-lg text-gray-500 font-mono">{unit}</span>}
     </div>
+    <div className="text-gray-400 text-xs sm:text-sm mb-1">{label}</div>
+    {sublabel && <div className="text-gray-600 text-xs font-mono break-words">{sublabel}</div>}
   </div>
 );
 
 // ==================== AUDIT TRAIL ====================
-
 export const AuditTrail = () => {
   const fixedChainId = 80002;
 
@@ -477,7 +570,6 @@ export const AuditTrail = () => {
   useEffect(() => {
     if (!reliefManager?.readContract) return;
     loadAuditData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reliefManager?.readContract]);
 
   const loadAuditData = async () => {
@@ -537,257 +629,152 @@ export const AuditTrail = () => {
     }
   };
 
-  if (loading) return <LoadingSpinner text="Loading audit trail..." />;
+  if (loading) return <LoadingSpinner text="Loading immutable records..." />;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-7xl mx-auto px-4">
-        <h1 className="text-4xl font-bold mb-10 text-center">
-          Public Audit Trail
-        </h1>
+    <div className="min-h-screen bg-[#0B0F14] text-white relative">
+      {/* Grid Background */}
+      <div
+        className="absolute inset-0 opacity-[0.02] pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px),
+                           linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px)`,
+          backgroundSize: "50px 50px",
+        }}
+      />
 
-        <div className="card mb-8">
-          <h2 className="text-xl font-semibold mb-4">System Stats</h2>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div>
-              <p className="text-gray-600 text-sm">Active Beneficiaries</p>
-              <p className="text-2xl font-bold">{stats?.activeBeneficiaries ?? 0}</p>
-              <p className="text-xs text-gray-400">
-                Registered: {stats?.totalBeneficiariesRegistered ?? 0}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-gray-600 text-sm">Active Merchants</p>
-              <p className="text-2xl font-bold">{stats?.activeMerchants ?? 0}</p>
-              <p className="text-xs text-gray-400">
-                Registered: {stats?.totalMerchantsRegistered ?? 0}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-gray-600 text-sm">Distributed</p>
-              <p className="text-2xl font-bold">
-                {parseFloat(stats?.totalDistributed ?? 0).toFixed(2)} RUSD
-              </p>
-              <p className="text-xs text-gray-400">
-                Spent: {parseFloat(stats?.totalSpent ?? 0).toFixed(2)} RUSD
-              </p>
-            </div>
-
-            <div>
-              <p className="text-gray-600 text-sm">Transactions</p>
-              <p className="text-2xl font-bold">{stats?.totalTransactions ?? 0}</p>
-              <p className="text-xs text-gray-400">
-                Spent: {parseFloat(stats?.totalSpent ?? 0).toFixed(2)} RUSD
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Recent Transactions</h2>
-            <button onClick={loadAuditData} className="btn-secondary">
-              🔄 Refresh
-            </button>
-          </div>
-
-          {recentTx.length === 0 ? (
-            <p className="text-center text-gray-600 py-10">
-              No transactions found yet
+      <div className="relative py-12 sm:py-20 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12 sm:mb-16">
+            <p className="text-xs sm:text-sm uppercase tracking-wider text-cyan-400 mb-4 font-mono">
+              Public Ledger
             </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-                      Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-                      Beneficiary
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-                      Merchant
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-                      Amount
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-                      Category
-                    </th>
-                  </tr>
-                </thead>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
+              Immutable Audit Trail
+            </h1>
+            <p className="text-sm sm:text-base md:text-lg text-gray-400">
+              Complete transparency. Zero trust required.
+            </p>
+          </div>
 
-                <tbody className="divide-y divide-gray-200">
-                  {recentTx.map((tx) => (
-                    <tr key={tx.id}>
-                      <td className="px-6 py-4 text-sm">
-                        {formatters.formatDate(tx.timestamp)}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-mono">
-                        {formatters.formatAddress(tx.beneficiary)}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-mono">
-                        {formatters.formatAddress(tx.merchant)}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-semibold">
-                        {parseFloat(tx.amount).toFixed(2)} RUSD
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <span className="badge badge-info">{tx.category}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* System Stats */}
+          <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
+            <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-4 sm:mb-6 text-cyan-400 font-mono uppercase tracking-wider">
+              Protocol Metrics
+            </h2>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <div>
+                <p className="text-gray-500 text-xs sm:text-sm mb-2 font-mono">Active Merchants</p>
+                <p className="text-2xl sm:text-3xl font-bold text-emerald-400">
+                  {stats?.activeMerchants ?? 0}
+                </p>
+                <p className="text-xs text-gray-600 mt-1 font-mono">
+                  Registered: {stats?.totalMerchantsRegistered ?? 0}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-gray-500 text-xs sm:text-sm mb-2 font-mono">Distributed</p>
+                <p className="text-2xl sm:text-3xl font-bold text-cyan-400">
+                  {parseFloat(stats?.totalDistributed ?? 0).toFixed(0)}
+                </p>
+                <p className="text-xs text-gray-600 mt-1 font-mono">
+                  Spent: {parseFloat(stats?.totalSpent ?? 0).toFixed(0)} RUSD
+                </p>
+              </div>
+
+              <div>
+                <p className="text-gray-500 text-xs sm:text-sm mb-2 font-mono">Transactions</p>
+                <p className="text-2xl sm:text-3xl font-bold text-emerald-400">
+                  {stats?.totalTransactions ?? 0}
+                </p>
+                <p className="text-xs text-gray-600 mt-1 font-mono">
+                  All time on-chain
+                </p>
+              </div>
             </div>
-          )}
+          </div>
+
+          {/* Transactions Table */}
+          <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <h2 className="text-base sm:text-lg md:text-xl font-semibold text-cyan-400 font-mono uppercase tracking-wider">
+                Recent Transactions
+              </h2>
+              <button
+                onClick={loadAuditData}
+                className="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-700 hover:border-cyan-500/50 text-xs sm:text-sm font-semibold transition-all duration-300 hover:bg-cyan-500/5"
+              >
+                🔄 Refresh
+              </button>
+            </div>
+
+            {recentTx.length === 0 ? (
+              <div className="text-center py-12 sm:py-16">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-gray-800/50 border border-gray-700 flex items-center justify-center">
+                  <span className="text-xl sm:text-2xl text-gray-600">∅</span>
+                </div>
+                <p className="text-sm sm:text-base text-gray-500 font-mono">No transactions recorded yet</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <div className="inline-block min-w-full align-middle">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="border-b border-gray-800">
+                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                          Timestamp
+                        </th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                          Beneficiary
+                        </th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                          Merchant
+                        </th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                          Amount
+                        </th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                          Category
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-gray-800/50">
+                      {recentTx.map((tx) => (
+                        <tr
+                          key={tx.id}
+                          className="hover:bg-gray-800/30 transition-colors"
+                        >
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono text-gray-400 whitespace-nowrap">
+                            {formatters.formatDate(tx.timestamp)}
+                          </td>
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono text-cyan-400 whitespace-nowrap">
+                            {formatters.formatAddress(tx.beneficiary)}
+                          </td>
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-mono text-emerald-400 whitespace-nowrap">
+                            {formatters.formatAddress(tx.merchant)}
+                          </td>
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-bold text-white whitespace-nowrap">
+                            {parseFloat(tx.amount).toFixed(2)} RUSD
+                          </td>
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm">
+                            <span className="px-2 sm:px-3 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono whitespace-nowrap">
+                              {tx.category}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
-  );
-};
-
-// ==================== HEADER ====================
-
-export const Header = () => {
-  const { account, disconnect } = useWeb3();
-  const { userRole, signOut } = useAuth();
-
-  const handleDisconnect = () => {
-    signOut();
-    disconnect();
-  };
-
-  return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex justify-between items-center">
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-xl font-bold">R</span>
-            </div>
-            <span className="text-xl font-bold text-gray-900">Relief Aid</span>
-          </Link>
-
-          {account && (
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="text-sm text-gray-500">Connected</div>
-                <div className="text-sm font-medium text-gray-900">
-                  {formatters.formatAddress(account)}
-                </div>
-              </div>
-
-              {userRole && <span className="badge badge-info">{userRole}</span>}
-
-              <button onClick={handleDisconnect} className="btn-secondary text-sm">
-                Disconnect
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </header>
-  );
-};
-
-// ==================== NAVBAR ====================
-
-export const Navbar = () => {
-  const { userRole } = useAuth();
-
-  const getNavLinks = () => {
-    switch (userRole) {
-      case "ADMIN":
-        return [
-          { to: "/admin", label: "Dashboard" },
-          { to: "/admin/beneficiaries", label: "Beneficiaries" },
-          { to: "/admin/merchants", label: "Merchants" },
-          { to: "/admin/distribute", label: "Distribute" },
-        ];
-      case "BENEFICIARY":
-        return [
-          { to: "/beneficiary", label: "Dashboard" },
-          { to: "/beneficiary/spend", label: "Spend" },
-          { to: "/beneficiary/history", label: "History" },
-        ];
-      case "MERCHANT":
-        return [
-          { to: "/merchant", label: "Dashboard" },
-          { to: "/merchant/payments", label: "Payments" },
-        ];
-      default:
-        return [
-          { to: "/", label: "Home" },
-          { to: "/audit", label: "Public Audit" },
-        ];
-    }
-  };
-
-  return (
-    <nav className="bg-white border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex space-x-8">
-          {getNavLinks().map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className="py-4 px-2 border-b-2 border-transparent hover:border-primary-600 text-gray-700 hover:text-gray-900 transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </nav>
-  );
-};
-
-// ==================== FOOTER ====================
-
-export const Footer = () => {
-  return (
-    <footer className="bg-gray-800 text-white mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
-            <h3 className="text-lg font-bold mb-4">Relief Aid System</h3>
-            <p className="text-gray-400 text-sm">
-              Decentralized emergency relief distribution on Polygon Amoy
-            </p>
-          </div>
-
-          <div>
-            <h4 className="font-semibold mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li>
-                <Link to="/" className="hover:text-white">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link to="/audit" className="hover:text-white">
-                  Public Audit
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-semibold mb-4">Network</h4>
-            <p className="text-sm text-gray-400">Polygon Amoy Testnet</p>
-            <p className="text-sm text-gray-400">Chain ID: 80002</p>
-          </div>
-        </div>
-
-        <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
-          © 2026 Relief Aid System. All rights reserved.
-        </div>
-      </div>
-    </footer>
   );
 };
