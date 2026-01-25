@@ -18,6 +18,13 @@ import ReliefUSDABI from "../contracts/ReliefUSD.json";
 import DonationTreasuryABI from "../contracts/DonationTreasury.json";
 
 import addresses from "../contracts/addresses.json";
+import {
+  HeroSkeleton,
+  StatsGridSkeleton,
+  DonationSkeleton,
+  FlowSkeleton,
+  TableSkeleton,
+} from "./Skeletons";
 
 // ==================== LANDING PAGE ====================
 export const LandingPage = () => {
@@ -61,6 +68,12 @@ export const LandingPage = () => {
 
   // Mouse position for parallax effect
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+ const [pageLoading, setPageLoading] = useState(true);
+
+useEffect(() => {
+  const t = setTimeout(() => setPageLoading(false), 1200);
+  return () => clearTimeout(t);
+}, []);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -236,6 +249,7 @@ export const LandingPage = () => {
       setDonating(false);
     }
   };
+if (pageLoading) return <HeroSkeleton />;
 
   return (
     <div className="min-h-screen bg-[#0B0F14] text-white relative overflow-hidden">
@@ -257,18 +271,21 @@ export const LandingPage = () => {
         />
       </div>
 
-      {/* Grid Pattern */}
-      <div
-        className="fixed inset-0 opacity-[0.02] pointer-events-none"
-        style={{
-          backgroundImage: `linear-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px)`,
-          backgroundSize: "50px 50px",
-        }}
-      />
-
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-16 sm:py-20">
+        {/* Enhanced Grid Pattern - Now visible everywhere */}
+        <div
+          className="absolute inset-0 opacity-[0.08] pointer-events-none z-0"
+          style={{
+            backgroundImage: `linear-gradient(rgba(6, 182, 212, 0.2) 1px, transparent 1px),
+                             linear-gradient(90deg, rgba(6, 182, 212, 0.2) 1px, transparent 1px)`,
+            backgroundSize: "40px 40px",
+          }}
+        />
+
+        {/* Animated Floating Data Fragments - Now visible on all screens */}
+        <FloatingTexts />
+
         <div className="max-w-6xl mx-auto text-center relative z-10 w-full">
           {/* Main Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 sm:mb-8 tracking-tight">
@@ -304,25 +321,15 @@ export const LandingPage = () => {
             </Link>
           </div>
         </div>
-
-        {/* Floating Data Fragments - Hidden on mobile */}
-        <div className="absolute inset-0 pointer-events-none hidden md:block">
-          <div className="absolute top-1/4 left-1/4 text-xs text-cyan-500/30 font-mono animate-pulse">
-            0x7f...a4c2
-          </div>
-          <div className="absolute top-1/3 right-1/4 text-xs text-emerald-500/30 font-mono animate-pulse">
-            Block #847293
-          </div>
-          <div className="absolute bottom-1/3 left-1/3 text-xs text-cyan-500/30 font-mono animate-pulse">
-            Verified
-          </div>
-        </div>
       </section>
 
       {/* Live System Snapshot */}
-      {loadingStats && <LoadingSpinner text="Initializing protocol..." />}
+      {loadingStats && (
+  <StatsGridSkeleton />
+)}
 
-      {stats && !loadingStats && (
+
+      {loadingStats ? <FlowSkeleton /> : (
         <section className="relative pb-20 sm:pb-32 px-4 sm:px-6">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12 sm:mb-16">
@@ -361,7 +368,7 @@ export const LandingPage = () => {
       )}
 
       {/* Donation Section */}
-      <section className="relative py-20 sm:py-32 px-4 sm:px-6 border-t border-gray-800/50">
+    {loadingStats ? <DonationSkeleton /> : ( <section className="relative py-20 sm:py-32 px-4 sm:px-6 border-t border-gray-800/50">
         <div className="max-w-3xl mx-auto">
           <div className="p-6 sm:p-8 md:p-12">
             <div className="mb-8">
@@ -425,92 +432,164 @@ export const LandingPage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> )}
 
-      {/* Protocol Flow */}
-      <section className="relative py-20 sm:py-36 px-4 sm:px-6 border-t border-gray-800/60 bg-[#0B0F14]">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-16 sm:mb-24">
-            <p className="text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] text-cyan-400 font-mono mb-4">
-              Protocol Architecture
-            </p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
-              Capital Flow
-            </h2>
-            <p className="text-sm sm:text-base md:text-lg text-gray-500">
-              Deterministic. Verifiable. On-chain.
-            </p>
+      {/* Enhanced Protocol Flow */}
+     {/* Enhanced Protocol Flow */}
+<section className="relative py-20 sm:py-36 px-4 sm:px-6 border-t border-gray-800/60 bg-gradient-to-b from-[#0B0F14] to-[#0F1623] overflow-hidden">
+  <div className="max-w-6xl mx-auto">
+
+    {/* Header */}
+    <div className="text-center mb-16 sm:mb-24">
+      <p className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-mono mb-4">
+        Protocol Architecture
+      </p>
+      <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+        Capital Flow
+      </h2>
+      <p className="text-sm sm:text-base md:text-lg text-gray-500">
+        Deterministic. Verifiable. On-chain.
+      </p>
+    </div>
+
+    {/* Flow Container */}
+    <div className="relative max-w-4xl mx-auto">
+
+      {/* Vertical Spine */}
+      <div className="absolute left-1/2 top-0 bottom-0 w-0.5 -translate-x-1/2">
+        <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/0 via-cyan-500/40 to-cyan-500/0" />
+        <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/0 via-emerald-500/20 to-emerald-500/0 animate-pulse" />
+      </div>
+
+      {[
+        {
+          title: "Donation Received",
+          subtitle: "Capital Entry",
+          desc: "POL enters the DonationTreasury and is locked on-chain.",
+          icon: "⬇",
+          color: "cyan",
+        },
+        {
+          title: "Escrow & Mint",
+          subtitle: "Smart Contract Enforcement",
+          desc: "RUSD is minted at protocol rate and routed to ReliefManager.",
+          icon: "⚙",
+          color: "emerald",
+        },
+        {
+          title: "Identity Verification",
+          subtitle: "Whitelisted Actors",
+          desc: "Beneficiaries and merchants are validated via AccessControl.",
+          icon: "✓",
+          color: "cyan",
+        },
+        {
+          title: "Redemption Executed",
+          subtitle: "On / Off-chain Settlement",
+          desc: "RUSD burned. POL released automatically or via admin approval.",
+          icon: "⇄",
+          color: "emerald",
+        },
+        {
+          title: "Audit & Finality",
+          subtitle: "Immutable Record",
+          desc: "Transaction hash, timestamp, and state permanently recorded.",
+          icon: "∞",
+          color: "cyan",
+        },
+      ].map((step, i) => (
+        <div
+          key={i}
+          className="relative flex flex-col md:flex-row items-center mb-16 sm:mb-20 md:mb-24 last:mb-0"
+        >
+
+          {/* Connector Line (desktop only) */}
+          <div
+            className={`hidden md:block absolute left-1/2 top-1/2 w-20 h-0.5
+            ${
+              i % 2 === 0
+                ? "translate-x-0 bg-gradient-to-r"
+                : "-translate-x-full bg-gradient-to-l"
+            }
+            ${
+              step.color === "cyan"
+                ? "from-cyan-500/40"
+                : "from-emerald-500/40"
+            } to-transparent`}
+          />
+
+          {/* Center Node */}
+          <div className="relative md:absolute md:left-1/2 md:-translate-x-1/2 z-20 mb-6 md:mb-0">
+            <div
+              className={`w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl bg-[#0F1623]
+              border-2 flex items-center justify-center text-xl sm:text-2xl shadow-2xl
+              ${
+                step.color === "cyan"
+                  ? "border-cyan-500/60 text-cyan-400 shadow-cyan-500/20"
+                  : "border-emerald-500/60 text-emerald-400 shadow-emerald-500/20"
+              }`}
+            >
+              {step.icon}
+            </div>
           </div>
 
-          {/* Flow Container */}
-          <div className="relative max-w-3xl mx-auto">
-            {/* Vertical spine - Now visible on all screens */}
-            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-gray-800 to-transparent -translate-x-1/2" />
+          {/* Card */}
+          <div
+            className={`w-full md:w-[calc(50%-4rem)]
+            text-center md:text-left
+            ${
+              i % 2 === 0
+                ? "md:ml-auto md:pl-16"
+                : "md:mr-auto md:pr-16 md:text-right"
+            }`}
+          >
+            <div
+              className={`relative bg-gradient-to-br from-[#0F1623] to-[#1a1f2e]
+              border rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-7
+              transition-all duration-300 hover:scale-[1.02]
+              ${
+                step.color === "cyan"
+                  ? "border-cyan-500/20 hover:border-cyan-500/60 hover:shadow-lg hover:shadow-cyan-500/10"
+                  : "border-emerald-500/20 hover:border-emerald-500/60 hover:shadow-lg hover:shadow-emerald-500/10"
+              }`}
+            >
+              {/* Glow Accent */}
+              <div
+                className={`absolute top-0 right-0 w-20 h-20 opacity-10 blur-2xl rounded-full
+                ${
+                  step.color === "cyan"
+                    ? "bg-cyan-500"
+                    : "bg-emerald-500"
+                }`}
+              />
 
-            {[
-              {
-                title: "Donation Received",
-                subtitle: "Capital Entry",
-                desc: "POL enters the DonationTreasury and is locked on-chain.",
-                icon: "⬇",
-              },
-              {
-                title: "Escrow & Mint",
-                subtitle: "Smart Contract Enforcement",
-                desc: "RUSD is minted at protocol rate and routed to ReliefManager.",
-                icon: "⚙",
-              },
-              {
-                title: "Identity Verification",
-                subtitle: "Whitelisted Actors",
-                desc: "Beneficiaries and merchants are validated via AccessControl.",
-                icon: "✓",
-              },
-              {
-                title: "Redemption Executed",
-                subtitle: "On / Off-chain Settlement",
-                desc: "RUSD burned. POL released automatically or via admin approval.",
-                icon: "⇄",
-              },
-              {
-                title: "Audit & Finality",
-                subtitle: "Immutable Record",
-                desc: "Transaction hash, timestamp, and state permanently recorded.",
-                icon: "∞",
-              },
-            ].map((step, i) => (
-              <div key={i} className="relative flex items-start mb-16 sm:mb-20 md:mb-24 last:mb-0">
-                {/* Center node - Same on all screens */}
-                <div className="absolute left-1/2 -translate-x-1/2 z-10">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-xl sm:rounded-2xl bg-[#0F1623] border border-gray-800 flex items-center justify-center text-lg sm:text-xl text-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.1)]">
-                    {step.icon}
-                  </div>
-                </div>
+              <p
+                className={`text-xs sm:text-sm font-mono mb-2 uppercase tracking-wider
+                ${
+                  step.color === "cyan"
+                    ? "text-cyan-400"
+                    : "text-emerald-400"
+                }`}
+              >
+                {step.subtitle}
+              </p>
 
-                {/* Content card - Alternating sides on all screens */}
-                <div className={`w-[calc(50%-2rem)] sm:w-[calc(50%-2.5rem)] md:w-[calc(50%-3rem)] ${
-                  i % 2 === 0 
-                    ? "ml-auto text-left pl-8 sm:pl-10 md:pl-12" 
-                    : "mr-auto text-right pr-8 sm:pr-10 md:pr-12"
-                }`}>
-                  <div className="bg-[#0F1623]/80 backdrop-blur border border-gray-800 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 hover:border-cyan-500/40 transition-colors">
-                    <p className="text-xs text-cyan-400 font-mono mb-1 sm:mb-2">
-                      {step.subtitle}
-                    </p>
-                    <h3 className="text-sm sm:text-base md:text-lg font-semibold text-white mb-1 sm:mb-2">
-                      {step.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-gray-400 leading-relaxed font-mono">
-                      {step.desc}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
+              <h3 className="text-base sm:text-lg md:text-xl font-bold text-white mb-2 sm:mb-3">
+                {step.title}
+              </h3>
+
+              <p className="text-sm sm:text-sm text-gray-400 leading-relaxed font-mono">
+                {step.desc}
+              </p>
+            </div>
           </div>
+
         </div>
-      </section>
+      ))}
+    </div>
+  </div>
+</section>
+
 
       {/* Final Statement */}
       <section className="relative py-20 sm:py-32 px-4 sm:px-6 border-t border-gray-800/50">
@@ -536,6 +615,62 @@ export const LandingPage = () => {
     </div>
   );
 };
+
+// Floating animated texts component
+const FloatingTexts = () => {
+  const floatingData = [
+    { text: "0x7f...a4c2", delay: 0, duration: 20 },
+    { text: "Block #847293", delay: 2, duration: 25 },
+    { text: "Verified ✓", delay: 4, duration: 22 },
+    { text: "RUSD Minted", delay: 1, duration: 23 },
+    { text: "Treasury Lock", delay: 3, duration: 21 },
+    { text: "AccessControl", delay: 5, duration: 24 },
+    { text: "Immutable", delay: 2.5, duration: 26 },
+    { text: "On-chain", delay: 4.5, duration: 19 },
+  ];
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-[1]">
+      {floatingData.map((item, i) => (
+        <div
+          key={i}
+          className="absolute text-xs sm:text-sm font-mono opacity-20 animate-float"
+          style={{
+            top: `${15 + (i * 12) % 70}%`,
+            left: `${10 + (i * 15) % 80}%`,
+            animationDelay: `${item.delay}s`,
+            animationDuration: `${item.duration}s`,
+            color: i % 2 === 0 ? "#06b6d4" : "#10b981",
+          }}
+        >
+          {item.text}
+        </div>
+      ))}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% {
+            transform: translate(0, 0) rotate(0deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.3;
+          }
+          50% {
+            transform: translate(100px, -150px) rotate(5deg);
+            opacity: 0.2;
+          }
+          90% {
+            opacity: 0.15;
+          }
+        }
+        .animate-float {
+          animation: float linear infinite;
+        }
+      `}</style>
+    </div>
+  );
+};
+
 
 const StatCard = ({ value, label, unit, color, sublabel }) => (
   <div className="group relative bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-4 sm:p-6 hover:border-cyan-500/50 transition-all duration-300">
@@ -628,8 +763,8 @@ export const AuditTrail = () => {
       setLoading(false);
     }
   };
+if (loading) return <TableSkeleton />;
 
-  if (loading) return <LoadingSpinner text="Loading immutable records..." />;
 
   return (
     <div className="min-h-screen bg-[#0B0F14] text-white relative">

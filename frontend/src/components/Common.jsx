@@ -1,7 +1,9 @@
-import { Component } from "react";
+import { Component , useEffect} from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useWeb3, useAuth } from "../hooks/Web3Hooks";
 import { formatters, constants } from "../utils/Utils";
+import { useSnackbar } from "./Snackbar";
+import { parseTxError } from "../utils/txErrors";
 
 // ==================== HEADER ====================
 export const Header = () => {
@@ -48,7 +50,7 @@ export const Header = () => {
 
               <button
                 onClick={handleDisconnect}
-                className="px-3 sm:px-4 py-2 rounded-lg border border-gray-700 hover:border-cyan-500/50 text-xs sm:text-sm font-semibold transition-all duration-300 hover:bg-cyan-500/5 text-white whitespace-nowrap"
+                className="px-3 sm:px-4 py-2 rounded-lg border border-gray-700 hover:border-cyan-500/50 text-xs sm:text-sm font-semibold transition-all duration-300 hover:bg-cyan-500/5 text-white whitespace-nowrap font-mono"
               >
                 Disconnect
               </button>
@@ -306,59 +308,57 @@ export const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
 
 // ==================== TRANSACTION STATUS ====================
 export const TransactionStatus = ({ status, hash, error, onClear }) => {
-  const getStatusConfig = () => {
-    switch (status) {
-      case "pending":
-        return {
-          bg: "bg-yellow-500/10",
-          border: "border-yellow-500/20",
-          text: "text-yellow-400",
-          icon: "⏳",
-          label: "Transaction Pending",
-        };
-      case "success":
-        return {
-          bg: "bg-emerald-500/10",
-          border: "border-emerald-500/20",
-          text: "text-emerald-400",
-          icon: "✓",
-          label: "Transaction Confirmed",
-        };
-      case "error":
-        return {
-          bg: "bg-red-500/10",
-          border: "border-red-500/20",
-          text: "text-red-400",
-          icon: "✕",
-          label: "Transaction Failed",
-        };
-      default:
-        return {
-          bg: "bg-gray-500/10",
-          border: "border-gray-500/20",
-          text: "text-gray-400",
-          icon: "ℹ",
-          label: "Transaction Status",
-        };
-    }
-  };
+  const { showSnackbar } = useSnackbar();
+
+  useEffect(() => {
+    if (status === "success")
+      showSnackbar("Transaction confirmed on-chain", "success");
+
+    if (status === "error")
+      showSnackbar(parseTxError(error), "error");
+  }, [status]);
 
   if (!status) return null;
 
-  const config = getStatusConfig();
+  const config = {
+    pending: {
+      bg: "bg-yellow-500/10",
+      border: "border-yellow-500/30",
+      text: "text-yellow-400",
+      icon: "⏳",
+      label: "Waiting for confirmation...",
+    },
+    success: {
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/30",
+      text: "text-emerald-400",
+      icon: "✓",
+      label: "Transaction Confirmed",
+    },
+    error: {
+      bg: "bg-red-500/10",
+      border: "border-red-500/30",
+      text: "text-red-400",
+      icon: "✕",
+      label: "Transaction Failed",
+    },
+  }[status];
 
   return (
     <div
-      className={`${config.bg} border ${config.border} rounded-xl p-3 sm:p-4 backdrop-blur-sm`}
+      className={`${config.bg} border ${config.border} rounded-xl p-4 backdrop-blur`}
     >
-      <div className="flex items-center justify-between gap-3 sm:gap-4 mb-2">
-        <div className="flex items-center space-x-2 sm:space-x-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <div
-            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg ${config.bg} border ${config.border} flex items-center justify-center flex-shrink-0`}
+            className={`w-9 h-9 rounded-lg border ${config.border} flex items-center justify-center`}
           >
-            <span className={`text-base sm:text-lg ${config.text}`}>{config.icon}</span>
+            <span className={`${config.text} text-lg`}>
+              {config.icon}
+            </span>
           </div>
-          <span className={`font-semibold ${config.text} font-mono text-xs sm:text-sm`}>
+
+          <span className={`font-mono ${config.text}`}>
             {config.label}
           </span>
         </div>
@@ -366,9 +366,9 @@ export const TransactionStatus = ({ status, hash, error, onClear }) => {
         {onClear && (
           <button
             onClick={onClear}
-            className="text-xs sm:text-sm text-gray-500 hover:text-white transition-colors whitespace-nowrap"
+            className="text-gray-500 hover:text-white transition"
           >
-            Dismiss
+            ✕
           </button>
         )}
       </div>
@@ -378,16 +378,10 @@ export const TransactionStatus = ({ status, hash, error, onClear }) => {
           href={`${constants.EXPLORER_URL}/tx/${hash}`}
           target="_blank"
           rel="noopener noreferrer"
-          className={`text-xs sm:text-sm ${config.text} hover:underline font-mono block mt-2 break-all`}
+          className="block mt-3 text-sm text-cyan-400 hover:underline font-mono"
         >
           View on Explorer →
         </a>
-      )}
-
-      {error && (
-        <p className="text-xs sm:text-sm mt-2 text-gray-400 font-mono bg-gray-950/50 rounded-lg p-2 sm:p-3 border border-gray-800 break-words">
-          {error}
-        </p>
       )}
     </div>
   );
