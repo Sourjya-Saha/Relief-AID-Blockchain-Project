@@ -20,9 +20,78 @@ import addresses from "../contracts/addresses.json";
 import { useIPFS } from "../hooks/Web3Hooks";
 
 // ============================================
-// HELPERS
+// SKELETON COMPONENTS
 // ============================================
 
+const SkeletonBlock = ({ className = "" }) => (
+  <div
+    className={`
+      relative overflow-hidden rounded-lg
+      bg-gradient-to-r from-gray-900/70 via-gray-800/70 to-gray-900/70
+      animate-pulse border border-gray-800/60
+      ${className}
+    `}
+  >
+    <div
+      className="absolute inset-0 -translate-x-full
+      animate-[shimmer_2s_infinite]
+      bg-gradient-to-r from-transparent via-white/5 to-transparent"
+    />
+  </div>
+);
+
+const DashboardSkeleton = () => (
+  <div className="min-h-screen bg-[#0B0F14] text-white">
+    <style>{skeletonCSS}</style>
+
+    <div
+      className="absolute inset-0 opacity-[0.04] pointer-events-none"
+      style={{
+        backgroundImage: `
+          linear-gradient(rgba(6,182,212,0.12) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(6,182,212,0.12) 1px, transparent 1px)
+        `,
+        backgroundSize: "45px 45px",
+      }}
+    />
+
+    <div className="relative max-w-7xl mx-auto px-4 py-8 sm:py-12">
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 sm:mb-12">
+        <div className="sk h-10 w-64" />
+        <div className="sk h-10 w-32" />
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10">
+        {[...Array(15)].map((_, i) => (
+          <div key={i} className="sk h-28" />
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-10">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="sk h-24" />
+        ))}
+      </div>
+
+      {/* Admin Controls */}
+      <div className="sk h-96 mb-10" />
+
+      {/* Tables */}
+      <div className="sk h-[600px]" />
+
+    </div>
+  </div>
+);
+
+
+
+// ============================================
+// HELPERS
+// ============================================
 
 const getLegacyOverrides = async (contract, gasLimit = 250000) => {
   const provider = contract?.runner?.provider;
@@ -45,6 +114,7 @@ const getLegacyOverrides = async (contract, gasLimit = 250000) => {
     gasPrice,
   };
 };
+
 const getChainKey = (chainId) => {
   if (!chainId) return null;
 
@@ -62,13 +132,13 @@ const getChainKey = (chainId) => {
 const askConfirm = (message) => window.confirm(message);
 
 const statusLabel = (s) => {
-  if (s === 0) return { text: "PENDING", cls: "badge badge-info" };
-  if (s === 1) return { text: "FULFILLED", cls: "badge badge-success" };
-  return { text: "REJECTED", cls: "badge badge-danger" };
+  if (s === 0) return { text: "PENDING", color: "cyan" };
+  if (s === 1) return { text: "FULFILLED", color: "emerald" };
+  return { text: "REJECTED", color: "red" };
 };
 
 // ============================================================
-// ADMIN DASHBOARD (CLEAN VERSION)
+// ADMIN DASHBOARD
 // ============================================================
 export const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -625,17 +695,19 @@ const uploadProofAndGetCID = async ({ file, requestId, merchantWallet }) => {
     loadRequests();
   }, [account, chainKey, reliefManager?.readContract, reliefUSD?.readContract]);
 
-  // -----------------------------
+
   // RENDER
-  // -----------------------------
-  if (loading) return <LoadingSpinner text="Loading dashboard..." />;
+  if (loading) return <DashboardSkeleton />;
 
   if (!account) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="card text-center py-12">
-          <p className="text-gray-700 font-semibold">Wallet not connected</p>
-          <p className="text-gray-500 text-sm mt-2">Connect your wallet first.</p>
+      <div className="min-h-screen bg-[#0B0F14] text-white flex items-center justify-center px-4">
+        <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8 sm:p-12 text-center max-w-md">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gray-800/50 border border-gray-700 flex items-center justify-center">
+            <span className="text-3xl">🔒</span>
+          </div>
+          <p className="text-xl font-semibold mb-2">Wallet Not Connected</p>
+          <p className="text-sm text-gray-400">Connect your wallet to access the admin dashboard.</p>
         </div>
       </div>
     );
@@ -643,10 +715,13 @@ const uploadProofAndGetCID = async ({ file, requestId, merchantWallet }) => {
 
   if (!chainKey) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="card text-center py-12">
-          <p className="text-gray-700 font-semibold">ChainId not detected</p>
-          <p className="text-gray-500 text-sm mt-2">Reconnect wallet.</p>
+      <div className="min-h-screen bg-[#0B0F14] text-white flex items-center justify-center px-4">
+        <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8 sm:p-12 text-center max-w-md">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gray-800/50 border border-gray-700 flex items-center justify-center">
+            <span className="text-3xl">⚠️</span>
+          </div>
+          <p className="text-xl font-semibold mb-2">ChainId Not Detected</p>
+          <p className="text-sm text-gray-400">Please reconnect your wallet.</p>
         </div>
       </div>
     );
@@ -654,17 +729,19 @@ const uploadProofAndGetCID = async ({ file, requestId, merchantWallet }) => {
 
   if (!stats) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Dashboard</h1>
-        <div className="card text-center py-12">
-          <p className="text-gray-700 font-semibold">Stats not loaded</p>
-          <p className="text-gray-500 text-sm mt-2">Check console for errors.</p>
+      <div className="min-h-screen bg-[#0B0F14] text-white flex items-center justify-center px-4">
+        <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8 sm:p-12 text-center max-w-md">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gray-800/50 border border-gray-700 flex items-center justify-center">
+            <span className="text-3xl">❌</span>
+          </div>
+          <p className="text-xl font-semibold mb-2">Stats Not Loaded</p>
+          <p className="text-sm text-gray-400 mb-6">Check console for errors.</p>
           <button
             onClick={() => {
               loadStats();
               loadRequests();
             }}
-            className="btn-primary mt-4"
+            className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-xl font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all duration-300"
           >
             Retry
           </button>
@@ -674,184 +751,394 @@ const uploadProofAndGetCID = async ({ file, requestId, merchantWallet }) => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+    <div className="min-h-screen bg-[#0B0F14] text-white relative overflow-hidden">
+      {/* Grid Background */}
+      <div
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(6,182,212,0.12) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(6,182,212,0.12) 1px, transparent 1px)
+          `,
+          backgroundSize: "45px 45px",
+        }}
+      />
 
-        <button
-          onClick={() => {
-            loadStats();
-            loadRequests();
-            loadOnchainRedemptions();
-          }}
-          className="btn-secondary"
-          disabled={loadingRequests || actionLoading || loadingOnchain}
-        >
-          🔄 Refresh All
-        </button>
-      </div>
-
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-        <StatCard title="Active Beneficiaries" value={stats.activeBeneficiaries ?? 0} icon="👥" color="blue" />
-        <StatCard title="Revoked Beneficiaries" value={stats.revokedBeneficiaries ?? 0} icon="⛔" color="orange" />
-        <StatCard title="Registered Beneficiaries" value={stats.registeredBeneficiaries ?? 0} icon="📝" color="purple" />
-
-        <StatCard title="Active Merchants" value={stats.activeMerchants ?? 0} icon="🏪" color="green" />
-        <StatCard title="Revoked Merchants" value={stats.revokedMerchants ?? 0} icon="⛔" color="orange" />
-        <StatCard title="Registered Merchants" value={stats.registeredMerchants ?? 0} icon="📌" color="purple" />
-
-        <StatCard title="RUSD Total Supply" value={`${parseFloat(stats.totalSupply ?? 0).toFixed(2)} RUSD`} icon="🪙" color="purple" />
-        <StatCard title="Total Distributed" value={`${parseFloat(stats.totalDistributed ?? 0).toFixed(2)} RUSD`} icon="💰" color="purple" />
-        <StatCard title="Total Spent" value={`${parseFloat(stats.totalSpent ?? 0).toFixed(2)} RUSD`} icon="🧾" color="green" />
-
-        <StatCard title="Treasury Balance" value={`${parseFloat(stats.treasuryBalancePOL ?? 0).toFixed(4)} POL`} icon="🏦" color="blue" />
-        <StatCard title="Total Donated" value={`${parseFloat(stats.totalDonatedPOL ?? 0).toFixed(4)} POL`} icon="🎁" color="green" />
-        <StatCard title="Total Redeemed" value={`${parseFloat(stats.totalRedeemedPOL ?? 0).toFixed(4)} POL`} icon="🔁" color="orange" />
-
-        <StatCard title="Redeemed (RUSD)" value={`${parseFloat(stats.totalRedeemedRUSD ?? 0).toFixed(2)} RUSD`} icon="🔥" color="purple" />
-        <StatCard title="POL → RUSD Rate" value={`1 POL = ${stats.polToRusdRate ?? 0} RUSD`} icon="⚖️" color="blue" />
-        <StatCard title="Offchain Requests" value={stats.totalRequests ?? 0} icon="📥" color="orange" />
-      </div>
-
-      {/* QUICK ACTIONS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-        <QuickAction title="Register Beneficiary" description="Add new beneficiary" link="/admin/beneficiaries" icon="➕" />
-        <QuickAction title="Register Merchant" description="Add new merchant" link="/admin/merchants" icon="🏪" />
-        <QuickAction title="Distribute Funds" description="Distribute relief to beneficiaries" link="/admin/distribute" icon="💸" />
-        <QuickAction title="Public Audit Trail" description="View system transactions" link="/audit" icon="🔍" />
-      </div>
-
-      {/* ADMIN CONTROLS */}
-      <div className="card mb-10">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Admin Controls</h2>
-
-        <div className="mb-6">
-          <TransactionStatus status={adminTxStatus} hash={adminTxHash} error={adminTxError} />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Update Rate */}
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-4">⚖️ Update POL → RUSD Rate</h3>
-            <label className="label">New Rate</label>
-            <input
-              type="number"
-              min="1"
-              className="input-field"
-              value={newRate}
-              onChange={(e) => setNewRate(e.target.value)}
-              placeholder="e.g. 1000"
-            />
-            <button onClick={handleUpdateRate} className="btn-primary mt-4 w-full">
-              Update Rate
-            </button>
+      <div className="relative max-w-7xl mx-auto px-4 py-8 sm:py-12">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 sm:mb-12">
+          <div>
+            <p className="text-xs uppercase tracking-wider text-cyan-400 mb-2 font-mono">
+              System Control
+            </p>
+            <h1 className="text-4xl sm:text-4xl md:text-5xl font-bold">Admin Dashboard</h1>
           </div>
 
-          {/* Withdraw POL */}
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-4">🏦 Withdraw POL from Treasury</h3>
-            <label className="label">Recipient Address</label>
-            <input
-              type="text"
-              className="input-field font-mono"
-              value={withdrawTo}
-              onChange={(e) => setWithdrawTo(e.target.value)}
-              placeholder="0x..."
-            />
-            <label className="label mt-3">Amount (POL)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.0001"
-              className="input-field"
-              value={withdrawAmount}
-              onChange={(e) => setWithdrawAmount(e.target.value)}
-              placeholder="e.g. 0.25"
-            />
-            <button onClick={handleWithdrawPOL} className="btn-primary mt-4 w-full">
-              Withdraw POL
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* OFFCHAIN REQUESTS TABLE */}
-      <div className="card mb-10">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Merchant Offchain Redemption Requests
-          </h2>
           <button
-            className="btn-secondary"
-            onClick={loadRequests}
-            disabled={loadingRequests || actionLoading}
+            onClick={() => {
+              loadStats();
+              loadRequests();
+              loadOnchainRedemptions();
+            }}
+            disabled={loadingRequests || actionLoading || loadingOnchain}
+            className="px-6 py-3 rounded-xl border border-gray-700 hover:border-cyan-500/50 bg-gray-900/50 backdrop-blur-sm transition-all duration-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800/50"
           >
-            🔄 Refresh
+             Refresh All
           </button>
         </div>
 
-        {loadingRequests ? (
-          <LoadingSpinner text="Loading requests..." />
-        ) : requests.length === 0 ? (
-          <p className="text-gray-600 text-center py-10">
-            No offchain redemption requests found.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Merchant</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-  INR
-</th>
-<th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-  UPI ID
-</th>
-<th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-  Note
-</th>
+        {/* Stats Grid */}
+        <div className="mb-10 sm:mb-16">
+          <div className="mb-6">
+            <p className="text-xs uppercase tracking-wider text-cyan-400 font-mono">
+              Protocol Metrics
+            </p>
+          </div>
 
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {requests.map((r) => {
-                  const st = statusLabel(r.status);
-                  const details = cidDetailsMap?.[r.id];
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <StatCard
+              title="Active Beneficiaries"
+              value={stats.activeBeneficiaries ?? 0}
+              icon="👥"
+              color="cyan"
+            />
+            <StatCard
+              title="Revoked Beneficiaries"
+              value={stats.revokedBeneficiaries ?? 0}
+              icon="⛔"
+              color="orange"
+            />
+            <StatCard
+              title="Registered Beneficiaries"
+              value={stats.registeredBeneficiaries ?? 0}
+              icon="📝"
+              color="purple"
+            />
+            <StatCard
+              title="Active Merchants"
+              value={stats.activeMerchants ?? 0}
+              icon="🏪"
+              color="emerald"
+            />
+            <StatCard
+              title="Revoked Merchants"
+              value={stats.revokedMerchants ?? 0}
+              icon="⛔"
+              color="orange"
+            />
+            <StatCard
+              title="Registered Merchants"
+              value={stats.registeredMerchants ?? 0}
+              icon="📌"
+              color="purple"
+            />
+            <StatCard
+              title="RUSD Total Supply"
+              value={`${parseFloat(stats.totalSupply ?? 0).toFixed(2)}`}
+              unit="RUSD"
+              icon="🪙"
+              color="purple"
+            />
+            <StatCard
+              title="Total Distributed"
+              value={`${parseFloat(stats.totalDistributed ?? 0).toFixed(2)}`}
+              unit="RUSD"
+              icon="💰"
+              color="purple"
+            />
+            <StatCard
+              title="Total Spent"
+              value={`${parseFloat(stats.totalSpent ?? 0).toFixed(2)}`}
+              unit="RUSD"
+              icon="🧾"
+              color="emerald"
+            />
+            <StatCard
+              title="Treasury Balance"
+              value={`${parseFloat(stats.treasuryBalancePOL ?? 0).toFixed(4)}`}
+              unit="POL"
+              icon="🏦"
+              color="cyan"
+            />
+            <StatCard
+              title="Total Donated"
+              value={`${parseFloat(stats.totalDonatedPOL ?? 0).toFixed(4)}`}
+              unit="POL"
+              icon="🎁"
+              color="emerald"
+            />
+            <StatCard
+              title="Total Redeemed"
+              value={`${parseFloat(stats.totalRedeemedPOL ?? 0).toFixed(4)}`}
+              unit="POL"
+              icon="🔁"
+              color="orange"
+            />
+            <StatCard
+              title="Redeemed (RUSD)"
+              value={`${parseFloat(stats.totalRedeemedRUSD ?? 0).toFixed(2)}`}
+              unit="RUSD"
+              icon="🔥"
+              color="purple"
+            />
+            <StatCard
+              title="POL → RUSD Rate"
+              value={`${stats.polToRusdRate ?? 0}`}
+              icon="⚖️"
+              color="cyan"
+            />
+            <StatCard
+              title="Offchain Requests"
+              value={stats.totalRequests ?? 0}
+              icon="📥"
+              color="orange"
+            />
+          </div>
+        </div>
 
-                  return (
-                    <tr key={r.id}>
-                      <td className="px-6 py-4 text-sm font-semibold">#{r.id}</td>
-                      <td className="px-6 py-4 text-sm font-mono">
-                        {formatters.formatAddress(r.merchant)}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-semibold">
-                        {parseFloat(r.rusdAmount).toFixed(2)} RUSD
-                      </td>
-                      <td className="px-6 py-4 text-sm font-semibold">
-  {details?.inrAmount ? `₹${details.inrAmount}` : "-"}
-</td>
+        {/* Quick Actions */}
+        <div className="mb-10 sm:mb-16">
+          <div className="mb-6">
+            <p className="text-xs uppercase tracking-wider text-emerald-400 font-mono">
+              Quick Actions
+            </p>
+          </div>
 
-<td className="px-6 py-4 text-sm font-mono">
-  {details?.upiId || "-"}
-</td>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <QuickAction
+              title="Register Beneficiary"
+              description="Add new beneficiary"
+              link="/admin/beneficiaries"
+              icon="➕"
+              onClick={() => navigate("/admin/beneficiaries")}
+            />
+            <QuickAction
+              title="Register Merchant"
+              description="Add new merchant"
+              link="/admin/merchants"
+              icon="🏪"
+              onClick={() => navigate("/admin/merchants")}
+            />
+            <QuickAction
+              title="Distribute Funds"
+              description="Distribute relief to beneficiaries"
+              link="/admin/distribute"
+              icon="💸"
+              onClick={() => navigate("/admin/distribute")}
+            />
+            <QuickAction
+              title="Public Audit Trail"
+              description="View system transactions"
+              link="/audit"
+              icon="🔍"
+              onClick={() => navigate("/audit")}
+            />
+          </div>
+        </div>
 
-<td className="px-6 py-4 text-sm text-gray-700 max-w-xs truncate">
-  {details?.note || "-"}
-</td>
+        {/* Admin Controls */}
+        <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-6 sm:p-8 mb-10 sm:mb-16">
+          <div className="mb-6">
+            <p className="text-xs uppercase tracking-wider text-cyan-400 mb-2 font-mono">
+              System Controls
+            </p>
+            <h2 className="text-xl sm:text-2xl font-semibold">Admin Operations</h2>
+          </div>
 
-                      <td className="px-6 py-4 text-sm">
-                        <span className={st.cls}>{st.text}</span>
-                      </td>
-                      <td className="px-6 py-4 text-sm">{formatters.formatDate(r.timestamp)}</td>
-                      <td className="px-6 py-4 text-sm">
-  <div className="flex flex-col gap-3">
+          <div className="mb-6">
+            <TransactionStatus
+              status={adminTxStatus}
+              hash={adminTxHash}
+              error={adminTxError}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Update Rate */}
+            <div className="bg-[#0F1623] border border-gray-700/50 rounded-xl p-5 sm:p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-xl">
+                  ⚖️
+                </div>
+                <h3 className="text-base sm:text-lg font-semibold">Update POL → RUSD Rate</h3>
+              </div>
+
+              <label className="block text-xs sm:text-sm font-mono text-gray-400 mb-2 uppercase tracking-wider">
+                New Rate
+              </label>
+              <input
+                type="number"
+                min="1"
+                className="w-full bg-gray-950/50 border border-gray-700 rounded-xl px-4 py-3 text-base font-mono focus:outline-none focus:border-cyan-500 transition-colors mb-4"
+                value={newRate}
+                onChange={(e) => setNewRate(e.target.value)}
+                placeholder="e.g. 1000"
+              />
+              <button
+                onClick={handleUpdateRate}
+                className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-xl font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all duration-300 font-mono"
+              >
+                Update Rate
+              </button>
+            </div>
+
+            {/* Withdraw POL */}
+            <div className="bg-[#0F1623] border border-gray-700/50 rounded-xl p-5 sm:p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xl">
+                  🏦
+                </div>
+                <h3 className="text-base sm:text-lg font-semibold">Withdraw POL from Treasury</h3>
+              </div>
+
+              <label className="block text-xs sm:text-sm font-mono text-gray-400 mb-2 uppercase tracking-wider">
+                Recipient Address
+              </label>
+              <input
+                type="text"
+                className="w-full bg-gray-950/50 border border-gray-700 rounded-xl px-4 py-3 text-base font-mono focus:outline-none focus:border-cyan-500 transition-colors mb-3"
+                value={withdrawTo}
+                onChange={(e) => setWithdrawTo(e.target.value)}
+                placeholder="0x..."
+              />
+
+              <label className="block text-xs sm:text-sm font-mono text-gray-400 mb-2 uppercase tracking-wider">
+                Amount (POL)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.0001"
+                className="w-full bg-gray-950/50 border border-gray-700 rounded-xl px-4 py-3 text-base font-mono focus:outline-none focus:border-cyan-500 transition-colors mb-4"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                placeholder="e.g. 0.25"
+              />
+              <button
+                onClick={handleWithdrawPOL}
+                className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-xl font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all duration-300 font-mono"
+              >
+                Withdraw POL
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Offchain Requests Table */}
+        <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-6 sm:p-8 mb-10 sm:mb-16">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-cyan-400 mb-2 font-mono">
+                Offchain Operations
+              </p>
+              <h2 className="text-xl sm:text-2xl font-semibold">
+                Merchant Redemption Requests
+              </h2>
+            </div>
+            <button
+              className="px-4 py-2 rounded-lg border border-gray-700 hover:border-cyan-500/50 text-sm font-semibold transition-all duration-300 hover:bg-cyan-500/5 font-mono disabled:opacity-50"
+              onClick={loadRequests}
+              disabled={loadingRequests || actionLoading}
+            >
+              Refresh
+            </button>
+          </div>
+
+          {loadingRequests ? (
+            <div className="py-12 flex justify-center">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-gray-400 font-mono">Loading requests...</span>
+              </div>
+            </div>
+          ) : requests.length === 0 ? (
+            <div className="text-center py-12 sm:py-16">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-800/50 border border-gray-700 flex items-center justify-center">
+                <span className="text-2xl text-gray-600">∅</span>
+              </div>
+              <p className="text-gray-400 font-mono">No offchain redemption requests found.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto -mx-6 sm:mx-0">
+              <div className="inline-block min-w-full align-middle">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b border-gray-800">
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        ID
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Merchant
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Amount
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        INR
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        UPI ID
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Note
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Status
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Date
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-gray-800/50">
+                    {requests.map((r) => {
+                      const st = statusLabel(r.status);
+                      const details = cidDetailsMap?.[r.id];
+
+                      return (
+                        <tr key={r.id} className="hover:bg-gray-800/30 transition-colors">
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-semibold font-mono whitespace-nowrap">
+                            #{r.id}
+                          </td>
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-mono text-cyan-400 whitespace-nowrap">
+                            {formatters.formatAddress(r.merchant)}
+                          </td>
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-semibold whitespace-nowrap">
+                            {parseFloat(r.rusdAmount).toFixed(2)} <span className="text-gray-500">RUSD</span>
+                          </td>
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-semibold whitespace-nowrap">
+                            {details?.inrAmount ? `₹${details.inrAmount}` : "-"}
+                          </td>
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-mono whitespace-nowrap">
+                            {details?.upiId || "-"}
+                          </td>
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-gray-400 max-w-xs truncate">
+                            {details?.note || "-"}
+                          </td>
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm whitespace-nowrap">
+                            <span
+                              className={`px-3 py-1 rounded-lg text-xs font-mono ${
+                                st.color === "cyan"
+                                  ? "bg-cyan-500/10 border border-cyan-500/20 text-cyan-400"
+                                  : st.color === "emerald"
+                                  ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+                                  : "bg-red-500/10 border border-red-500/20 text-red-400"
+                              }`}
+                            >
+                              {st.text}
+                            </span>
+                          </td>
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-gray-400 font-mono whitespace-nowrap">
+                            {formatters.formatDate(r.timestamp)}
+                          </td>
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm">
+  <div className="flex flex-col gap-3 min-w-[220px]">
+
+    {/* View CID */}
     <button
       onClick={() =>
         alert(
@@ -860,24 +1147,26 @@ const uploadProofAndGetCID = async ({ file, requestId, merchantWallet }) => {
           }`
         )
       }
-      className="text-primary-600 hover:text-primary-800 text-left"
+      className="text-cyan-400 hover:text-cyan-300 text-left font-mono text-xs"
       type="button"
     >
       View CID
     </button>
 
+    {/* Pending Actions */}
     {r.status === 0 && (
-      <div className="flex flex-col gap-4">
-        {/* ✅ Fulfill */}
-        <div className="border rounded-lg p-3 bg-green-50">
-          <p className="text-xs text-gray-700 font-semibold mb-2">
-            ✅ Fulfill Proof Upload
+      <div className="flex flex-row gap-4 items-start">
+
+        {/* Fulfill */}
+        <div className="border border-emerald-500/20 rounded-lg p-3 bg-emerald-500/5 w-[220px]">
+          <p className="text-xs text-emerald-400 font-semibold mb-2 font-mono">
+            ✅ Fulfill Proof
           </p>
 
           <input
             type="file"
             accept="image/*,.pdf"
-            className="input-field"
+            className="w-full bg-gray-950/50 border border-gray-700 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors"
             onChange={(e) =>
               setFulfillProofFiles((prev) => ({
                 ...prev,
@@ -887,35 +1176,35 @@ const uploadProofAndGetCID = async ({ file, requestId, merchantWallet }) => {
           />
 
           {fulfillProofFiles?.[r.id] && (
-            <p className="text-xs text-green-700 mt-2 font-semibold">
-              Selected: {fulfillProofFiles[r.id]?.name}
+            <p className="text-xs text-emerald-400 mt-1 font-mono truncate">
+              {fulfillProofFiles[r.id]?.name}
             </p>
           )}
 
           <button
             onClick={() => handleFulfill(r)}
             disabled={actionLoading || !fulfillProofFiles?.[r.id]}
-            className={`btn-primary w-full mt-3 ${
+            className={`w-full mt-2 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg font-semibold text-xs hover:shadow-lg hover:shadow-emerald-500/50 transition-all duration-300 font-mono ${
               actionLoading || !fulfillProofFiles?.[r.id]
                 ? "opacity-50 cursor-not-allowed"
                 : ""
             }`}
             type="button"
           >
-            ✅ Upload & Fulfill
+            Upload & Fulfill
           </button>
         </div>
 
-        {/* ✅ Reject */}
-        <div className="border rounded-lg p-3 bg-red-50">
-          <p className="text-xs text-gray-700 font-semibold mb-2">
-            ❌ Reject Proof Upload
+        {/* Reject */}
+        <div className="border border-red-500/20 rounded-lg p-3 bg-red-500/5 w-[220px]">
+          <p className="text-xs text-red-400 font-semibold mb-2 font-mono">
+            ❌ Reject Proof
           </p>
 
           <input
             type="file"
             accept="image/*,.pdf"
-            className="input-field"
+            className="w-full bg-gray-950/50 border border-gray-700 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-red-500 transition-colors"
             onChange={(e) =>
               setRejectProofFiles((prev) => ({
                 ...prev,
@@ -925,154 +1214,174 @@ const uploadProofAndGetCID = async ({ file, requestId, merchantWallet }) => {
           />
 
           {rejectProofFiles?.[r.id] && (
-            <p className="text-xs text-red-700 mt-2 font-semibold">
-              Selected: {rejectProofFiles[r.id]?.name}
+            <p className="text-xs text-red-400 mt-1 font-mono truncate">
+              {rejectProofFiles[r.id]?.name}
             </p>
           )}
 
           <button
             onClick={() => handleReject(r)}
             disabled={actionLoading || !rejectProofFiles?.[r.id]}
-            className={`btn-danger w-full mt-3 ${
+            className={`w-full mt-2 px-3 py-1.5 bg-red-500/20 border border-red-500/30 rounded-lg font-semibold text-xs text-red-400 hover:bg-red-500/30 transition-all duration-300 font-mono ${
               actionLoading || !rejectProofFiles?.[r.id]
                 ? "opacity-50 cursor-not-allowed"
                 : ""
             }`}
             type="button"
           >
-            ❌ Upload & Reject
+            Upload & Reject
           </button>
         </div>
+
       </div>
     )}
   </div>
 </td>
 
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* ✅ ON-CHAIN REDEMPTIONS TABLE */}
-      <div className="card">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Merchant On-Chain Redemptions
-          </h2>
-          <button
-            className="btn-secondary"
-            onClick={loadOnchainRedemptions}
-            disabled={loadingOnchain}
-          >
-            🔄 Refresh
-          </button>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
 
-        {loadingOnchain ? (
-          <LoadingSpinner text="Loading on-chain redemptions..." />
-        ) : onchainRedemptions.length === 0 ? (
-          <p className="text-gray-600 text-center py-10">
-            No on-chain redemptions found.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-                    Merchant
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-                    RUSD Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-                    POL Received
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-                    TX Hash
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {onchainRedemptions.map((redemption, idx) => (
-                  <tr key={idx}>
-                    <td className="px-6 py-4 text-sm font-mono">
-                      {formatters.formatAddress(redemption.merchant)}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-semibold">
-                      {parseFloat(redemption.rusdAmount).toFixed(2)} RUSD
-                    </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-green-600">
-                      {parseFloat(redemption.polAmount).toFixed(4)} POL
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      {formatters.formatDate(redemption.timestamp)}
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <a
-                        href={`https://amoy.polygonscan.com/tx/${redemption.txHash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary-600 hover:text-primary-800 font-mono text-xs"
-                      >
-                        {redemption.txHash.slice(0, 10)}...{redemption.txHash.slice(-8)}
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* On-Chain Redemptions Table */}
+        <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-6 sm:p-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-emerald-400 mb-2 font-mono">
+                On-Chain Operations
+              </p>
+              <h2 className="text-xl sm:text-2xl font-semibold">
+                Merchant On-Chain Redemptions
+              </h2>
+            </div>
+            <button
+              className="px-4 py-2 rounded-lg border border-gray-700 hover:border-cyan-500/50 text-sm font-semibold transition-all duration-300 hover:bg-cyan-500/5 font-mono disabled:opacity-50"
+              onClick={loadOnchainRedemptions}
+              disabled={loadingOnchain}
+            >
+              Refresh
+            </button>
           </div>
-        )}
+
+          {loadingOnchain ? (
+            <div className="py-12 flex justify-center">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-gray-400 font-mono">Loading on-chain redemptions...</span>
+              </div>
+            </div>
+          ) : onchainRedemptions.length === 0 ? (
+            <div className="text-center py-12 sm:py-16">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-800/50 border border-gray-700 flex items-center justify-center">
+                <span className="text-2xl text-gray-600">∅</span>
+              </div>
+              <p className="text-gray-400 font-mono">No on-chain redemptions found.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto -mx-6 sm:mx-0">
+              <div className="inline-block min-w-full align-middle">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b border-gray-800">
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Merchant
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        RUSD Amount
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        POL Received
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Date
+                      </th>
+                      <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-mono text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        TX Hash
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800/50">
+                    {onchainRedemptions.map((redemption, idx) => (
+                      <tr key={idx} className="hover:bg-gray-800/30 transition-colors">
+                        <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-mono text-cyan-400 whitespace-nowrap">
+                          {formatters.formatAddress(redemption.merchant)}
+                        </td>
+                        <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-semibold whitespace-nowrap">
+                          {parseFloat(redemption.rusdAmount).toFixed(2)} <span className="text-gray-500">RUSD</span>
+                        </td>
+                        <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm font-semibold text-emerald-400 whitespace-nowrap">
+                          {parseFloat(redemption.polAmount).toFixed(4)} <span className="text-gray-500">POL</span>
+                        </td>
+                        <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm text-gray-400 font-mono whitespace-nowrap">
+                          {formatters.formatDate(redemption.timestamp)}
+                        </td>
+                        <td className="px-4 sm:px-6 py-3 sm:py-4 text-sm">
+                          <a
+                            href={`https://amoy.polygonscan.com/tx/${redemption.txHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-cyan-400 hover:text-cyan-300 font-mono text-xs"
+                          >
+                            {redemption.txHash.slice(0, 10)}...{redemption.txHash.slice(-8)}
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
-
-  function QuickAction({ title, description, link, icon }) {
-    return (
-      <div
-        onClick={() => navigate(link)}
-        className="card hover:shadow-lg transition-shadow cursor-pointer"
-      >
-        <div className="flex items-start space-x-4">
-          <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center text-2xl">
-            {icon}
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">{title}</h3>
-            <p className="text-sm text-gray-600">{description}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 };
 
 // ==================== STATCARD ====================
-const StatCard = ({ title, value, icon, color }) => {
+const StatCard = ({ title, value, icon, color, unit }) => {
   const colors = {
-    blue: "bg-blue-100 text-blue-800",
-    green: "bg-green-100 text-green-800",
-    purple: "bg-purple-100 text-purple-800",
-    orange: "bg-orange-100 text-orange-800",
+    cyan: "border-cyan-500/20 hover:border-cyan-500/60 shadow-cyan-500/10",
+    emerald: "border-emerald-500/20 hover:border-emerald-500/60 shadow-emerald-500/10",
+    purple: "border-purple-500/20 hover:border-purple-500/60 shadow-purple-500/10",
+    orange: "border-orange-500/20 hover:border-orange-500/60 shadow-orange-500/10",
+  };
+
+  const iconColors = {
+    cyan: "bg-cyan-500/10 border-cyan-500/20 text-cyan-400",
+    emerald: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400",
+    purple: "bg-purple-500/10 border-purple-500/20 text-purple-400",
+    orange: "bg-orange-500/10 border-orange-500/20 text-orange-400",
+  };
+
+  const valueColors = {
+    cyan: "text-cyan-400",
+    emerald: "text-emerald-400",
+    purple: "text-purple-400",
+    orange: "text-orange-400",
   };
 
   return (
-    <div className="card">
+    <div
+      className={`bg-gray-900/50 backdrop-blur-sm border rounded-xl p-4 sm:p-6 hover:shadow-lg transition-all duration-300 ${colors[color]}`}
+    >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-600 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-xs sm:text-sm text-gray-400 mb-2 font-mono">{title}</p>
+          <div className="flex items-baseline gap-2">
+            <p className={`text-2xl sm:text-3xl font-bold ${valueColors[color]}`}>
+              {value}
+            </p>
+            {unit && <span className="text-sm text-gray-500 font-mono">{unit}</span>}
+          </div>
         </div>
         <div
-          className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl ${colors[color]}`}
+          className={`w-12 h-12 rounded-lg border flex items-center justify-center text-2xl ${iconColors[color]}`}
         >
           {icon}
         </div>
@@ -1081,10 +1390,68 @@ const StatCard = ({ title, value, icon, color }) => {
   );
 };
 
+// ==================== QUICK ACTION ====================
+const QuickAction = ({ title, description, icon, onClick }) => {
+  return (
+    <div
+      onClick={onClick}
+      className="bg-[#0F1623] border border-gray-700/50 rounded-xl p-5 sm:p-6 hover:border-cyan-500/50 transition-all duration-300 cursor-pointer hover:bg-gray-800/30"
+    >
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 bg-cyan-500/10 border border-cyan-500/20 rounded-lg flex items-center justify-center text-2xl flex-shrink-0">
+          {icon}
+        </div>
+        <div>
+          <h3 className="text-base sm:text-lg font-semibold mb-1">{title}</h3>
+          <p className="text-sm text-gray-400 font-mono">{description}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
 // ============================================================
-// BENEFICIARY MANAGEMENT
+// PAGE SKELETON
 // ============================================================
+
+const BeneficiarySkeleton = () => (
+  <div className="min-h-screen bg-[#0B0F14] text-white">
+    <style>{skeletonCSS}</style>
+
+    <div className="max-w-7xl mx-auto px-6 py-10">
+
+      {/* Header */}
+      <div className="mb-8">
+        <div className="sk h-3 w-32 mb-2" />
+        <div className="sk h-8 w-72" />
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-3 mb-6">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="sk h-8 w-32" />
+        ))}
+      </div>
+
+      {/* Single Big Table Skeleton */}
+      <div className="sk h-[420px] w-full rounded-2xl" />
+
+    </div>
+  </div>
+);
+
+
+
+
+
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
+
 export const BeneficiaryManagement = () => {
+
   const { chainId } = useWeb3();
   const chainKey = getChainKey(chainId);
 
@@ -1094,32 +1461,34 @@ export const BeneficiaryManagement = () => {
   );
 
   const [beneficiaries, setBeneficiaries] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [selectedBeneficiary, setSelectedBeneficiary] = useState(null);
+
+  // ================= LOAD =================
 
   const loadBeneficiaries = async () => {
     try {
       setLoading(true);
 
       if (!reliefManager?.readContract)
-        throw new Error("ReliefManager contract not ready");
+        throw new Error("ReliefManager not ready");
 
       const list = await reliefManager.getAllBeneficiaries();
-      const uniqueList = [...new Set(list)];
+      const unique = [...new Set(list)];
 
-      const beneficiaryList = await Promise.all(
-        uniqueList.map(async (addr) => {
-          const details = await reliefManager.getBeneficiaryDetails(addr);
-          return { address: addr, ...details };
+      const data = await Promise.all(
+        unique.map(async (addr) => {
+          const d = await reliefManager.getBeneficiaryDetails(addr);
+          return { address: addr, ...d };
         })
       );
 
-      setBeneficiaries(beneficiaryList);
-    } catch (error) {
-      console.error("Failed to load beneficiaries:", error);
+      setBeneficiaries(data);
+    } catch (err) {
+      console.error(err);
       setBeneficiaries([]);
     } finally {
       setLoading(false);
@@ -1129,293 +1498,293 @@ export const BeneficiaryManagement = () => {
   useEffect(() => {
     if (!reliefManager?.readContract) return;
     loadBeneficiaries();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reliefManager?.readContract]);
 
-const handleRevoke = async (ben) => {
-  try {
-    if (!askConfirm(`Revoke beneficiary access?\n\n${ben.address}`)) return;
+  // ================= ACTIONS =================
 
-    if (!reliefManager?.writeContract)
-      throw new Error("Wallet not connected or contract not ready");
+  const handleRevoke = async (ben) => {
+    try {
+      if (!askConfirm(`Revoke beneficiary?\n${ben.address}`)) return;
 
-    setActionLoading(true);
+      if (!reliefManager?.writeContract)
+        throw new Error("Wallet not connected");
 
-    // ✅ provider from ethers runner
-    const provider = reliefManager.writeContract.runner?.provider;
-    if (!provider) throw new Error("Provider not available");
+      setActionLoading(true);
 
-    // ✅ Legacy gas for Amoy
-    const gasPriceHex = await provider.send("eth_gasPrice", []);
-    const gasPrice = BigInt(gasPriceHex);
+      const overrides = await getLegacyOverrides(
+        reliefManager.writeContract
+      );
 
-    console.log("🛑 Revoking beneficiary:", ben.address);
-    console.log("⛽ gasPrice:", gasPrice.toString());
+      await reliefManager.writeContract.removeBeneficiary.staticCall(
+        ben.address
+      );
 
-    // ✅ Optional simulation
-    console.log("🧪 Simulating removeBeneficiary...");
-    await reliefManager.writeContract.removeBeneficiary.staticCall(ben.address);
-    console.log("✅ Simulation passed");
+      const tx =
+        await reliefManager.writeContract.removeBeneficiary(
+          ben.address,
+          overrides
+        );
 
-    // ✅ Send tx
-    const tx = await reliefManager.writeContract.removeBeneficiary(ben.address, {
-      gasLimit: 400000,
-      gasPrice,
-    });
+      await tx.wait();
+      await loadBeneficiaries();
 
-    console.log("⛓️ TX Hash:", tx.hash);
-    await tx.wait();
+    } catch (err) {
+      alert(err?.message || "Revoke failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
-    await loadBeneficiaries();
-  } catch (err) {
-    console.error("❌ revoke failed:", err);
-    alert(
-      err?.reason ||
-        err?.shortMessage ||
-        err?.info?.error?.message ||
-        err?.message ||
-        "Failed to revoke beneficiary"
-    );
-  } finally {
-    setActionLoading(false);
-  }
-};
+  const handleReWhitelist = async (ben) => {
+    try {
+      if (!askConfirm(`Re-enable beneficiary?\n${ben.address}`)) return;
 
-const handleReWhitelist = async (ben) => {
-  try {
-    if (!askConfirm(`Re-Whitelist beneficiary?\n\n${ben.address}`)) return;
+      if (!reliefManager?.writeContract)
+        throw new Error("Wallet not connected");
 
-    if (!reliefManager?.writeContract)
-      throw new Error("Wallet not connected or contract not ready");
+      setActionLoading(true);
 
-    setActionLoading(true);
+      const overrides = await getLegacyOverrides(
+        reliefManager.writeContract
+      );
 
-    // ✅ provider from ethers runner
-    const provider = reliefManager.writeContract.runner?.provider;
-    if (!provider) throw new Error("Provider not available");
+      await reliefManager.writeContract.reWhitelistBeneficiary.staticCall(
+        ben.address
+      );
 
-    // ✅ Legacy gas for Amoy
-    const gasPriceHex = await provider.send("eth_gasPrice", []);
-    const gasPrice = BigInt(gasPriceHex);
+      const tx =
+        await reliefManager.writeContract.reWhitelistBeneficiary(
+          ben.address,
+          overrides
+        );
 
-    console.log("✅ Re-whitelisting beneficiary:", ben.address);
-    console.log("⛽ gasPrice:", gasPrice.toString());
+      await tx.wait();
+      await loadBeneficiaries();
 
-    // ✅ Optional simulation
-    console.log("🧪 Simulating reWhitelistBeneficiary...");
-    await reliefManager.writeContract.reWhitelistBeneficiary.staticCall(
-      ben.address
-    );
-    console.log("✅ Simulation passed");
+    } catch (err) {
+      alert(err?.message || "Whitelist failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
-    // ✅ Send tx
-    const tx = await reliefManager.writeContract.reWhitelistBeneficiary(
-      ben.address,
-      {
-        gasLimit: 400000,
-        gasPrice,
-      }
-    );
+  // ================= RENDER =================
 
-    console.log("⛓️ TX Hash:", tx.hash);
-    await tx.wait();
-
-    await loadBeneficiaries();
-  } catch (err) {
-    console.error("❌ reWhitelist failed:", err);
-    alert(
-      err?.reason ||
-        err?.shortMessage ||
-        err?.info?.error?.message ||
-        err?.message ||
-        "Failed to re-whitelist beneficiary"
-    );
-  } finally {
-    setActionLoading(false);
-  }
-};
-
-
-  if (loading) return <LoadingSpinner text="Loading beneficiaries..." />;
+  if (loading) return <BeneficiarySkeleton />;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Beneficiary Management
-        </h1>
+    <div className="min-h-screen bg-[#0B0F14] text-white relative overflow-hidden">
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="btn-primary"
-          disabled={actionLoading}
-        >
-          ➕ Add Beneficiary
-        </button>
-      </div>
+      {/* GRID */}
+      <div
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        style={{
+          backgroundImage: `
+          linear-gradient(rgba(6,182,212,0.12) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(6,182,212,0.12) 1px, transparent 1px)
+        `,
+          backgroundSize: "45px 45px",
+        }}
+      />
 
-      {beneficiaries.length === 0 ? (
-        <div className="card text-center py-12">
-          <p className="text-gray-600">No beneficiaries registered yet</p>
+      <div className="relative max-w-7xl mx-auto px-4 py-10">
+
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-10">
+
+          <div>
+            <p className="text-xs uppercase tracking-wider text-cyan-400 font-mono mb-2">
+              Access Control
+            </p>
+            <h1 className="text-4xl font-bold">
+              Beneficiary Management
+            </h1>
+          </div>
+
+          <button
+            onClick={() => setShowModal(true)}
+            disabled={actionLoading}
+            className="px-4 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-500 font-mono text-sm font-semibold hover:shadow-lg hover:shadow-cyan-500/40 disabled:opacity-50"
+
+          >
+            + Add Beneficiary
+          </button>
+
         </div>
-      ) : (
-        <div className="card overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Address
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Total Received
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Total Spent
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Balance
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
 
-            <tbody className="divide-y divide-gray-200">
-              {beneficiaries.map((ben) => (
-                <tr key={ben.address}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-mono text-sm">
-                      {formatters.formatAddress(ben.address)}
-                    </div>
-                  </td>
+        {/* TABLE */}
+        <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-3">
 
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {ben.isWhitelisted ? (
-                      <span className="badge badge-success">ACTIVE</span>
-                    ) : (
-                      <span className="badge badge-danger">REVOKED</span>
-                    )}
-                  </td>
+          {beneficiaries.length === 0 ? (
+            <div className="py-20 text-center text-gray-400 font-mono">
+              No beneficiaries registered.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
 
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {parseFloat(ben.totalReceived).toFixed(2)} RUSD
-                  </td>
+              <table className="min-w-full">
 
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {parseFloat(ben.totalSpent).toFixed(2)} RUSD
-                  </td>
+                <thead>
+                  <tr className="border-b border-gray-800">
+                    {[
+                      "Address",
+                      "Status",
+                      "Received",
+                      "Spent",
+                      "Balance",
+                      "Actions",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="px-3 py-2 text-left lg:text-sm text-xs font-mono text-gray-500 uppercase"
 
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {parseFloat(ben.currentBalance).toFixed(2)} RUSD
-                  </td>
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
 
-                  <td className="px-6 py-4 whitespace-nowrap space-x-4">
-                    <button
-                      onClick={() => setSelectedBeneficiary(ben)}
-                      className="text-primary-600 hover:text-primary-800 text-sm"
-                      disabled={actionLoading}
+                <tbody className="divide-y divide-gray-800/50 lg:text-sm text-xs">
+
+                  {beneficiaries.map((ben) => (
+                    <tr
+                      key={ben.address}
+                      className="hover:bg-gray-800/30"
                     >
-                      View
-                    </button>
 
-                    {ben.isWhitelisted ? (
-                      <button
-                        onClick={() => handleRevoke(ben)}
-                        className="text-red-600 hover:text-red-800 text-sm"
-                        disabled={actionLoading}
-                      >
-                        Revoke
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleReWhitelist(ben)}
-                        className="text-green-600 hover:text-green-800 text-sm"
-                        disabled={actionLoading}
-                      >
-                        Re-Whitelist
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                      <td className="px-3 py-2 font-mono text-cyan-400">
+                        {formatters.formatAddress(ben.address)}
+                      </td>
 
-      {showModal && (
-        <Modal
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-          title="Register Beneficiary"
-        >
-          <RegisterBeneficiaryForm
-            onSuccess={() => {
-              setShowModal(false);
-              loadBeneficiaries();
-            }}
-          />
-        </Modal>
-      )}
+                      <td className="px-4 py-4">
+                        {ben.isWhitelisted ? (
+                          <span className="px-3 py-1 text-xs rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono">
+                            ACTIVE
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 text-xs rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 font-mono">
+                            REVOKED
+                          </span>
+                        )}
+                      </td>
 
+                      <td className="px-4 py-4 font-semibold">
+                        {Number(ben.totalReceived).toFixed(2)} RUSD
+                      </td>
 
-<SetSpendingLimits/>
-      {selectedBeneficiary && (
-        <Modal
-          isOpen={!!selectedBeneficiary}
-          onClose={() => setSelectedBeneficiary(null)}
-          title="Beneficiary Details"
-        >
-          <BeneficiaryDetails beneficiary={selectedBeneficiary} />
-        </Modal>
-      )}
-    </div>
-  );
-};
+                      <td className="px-4 py-4 font-semibold">
+                        {Number(ben.totalSpent).toFixed(2)} RUSD
+                      </td>
 
-// ---------------- DETAILS ----------------
-const BeneficiaryDetails = ({ beneficiary }) => {
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <p className="text-sm text-gray-600">Address</p>
-          <p className="font-mono text-sm">
-            {formatters.formatAddress(beneficiary.address)}
-          </p>
+                      <td className="px-4 py-4 font-semibold text-emerald-400">
+                        {Number(ben.currentBalance).toFixed(2)} RUSD
+                      </td>
+
+                      <td className="px-4 py-4 flex gap-4 font-mono text-sm">
+
+                        <button
+                          onClick={() => setSelectedBeneficiary(ben)}
+                          className="text-cyan-400 hover:text-cyan-300"
+                        >
+                          View
+                        </button>
+
+                        {ben.isWhitelisted ? (
+                          <button
+                            onClick={() => handleRevoke(ben)}
+                            disabled={actionLoading}
+                            className="text-red-400 hover:text-red-300 disabled:opacity-50"
+                          >
+                            Revoke
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleReWhitelist(ben)}
+                            disabled={actionLoading}
+                            className="text-emerald-400 hover:text-emerald-300 disabled:opacity-50"
+                          >
+                            Re-Whitelist
+                          </button>
+                        )}
+
+                      </td>
+
+                    </tr>
+                  ))}
+
+                </tbody>
+
+              </table>
+
+            </div>
+          )}
+
         </div>
-        <div>
-          <p className="text-sm text-gray-600">Total Received</p>
-          <p className="font-semibold">
-            {parseFloat(beneficiary.totalReceived).toFixed(2)} RUSD
-          </p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-600">Total Spent</p>
-          <p className="font-semibold">
-            {parseFloat(beneficiary.totalSpent).toFixed(2)} RUSD
-          </p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-600">Current Balance</p>
-          <p className="font-semibold">
-            {parseFloat(beneficiary.currentBalance).toFixed(2)} RUSD
-          </p>
-        </div>
+
+        {/* MODALS */}
+        {showModal && (
+          <Modal
+            isOpen={showModal}
+            onClose={() => setShowModal(false)}
+            title="Register Beneficiary"
+          >
+            <RegisterBeneficiaryForm
+              onSuccess={() => {
+                setShowModal(false);
+                loadBeneficiaries();
+              }}
+            />
+          </Modal>
+        )}
+
+        {selectedBeneficiary && (
+          <Modal
+            isOpen={!!selectedBeneficiary}
+            onClose={() => setSelectedBeneficiary(null)}
+            title="Beneficiary Details"
+          >
+            <BeneficiaryDetails beneficiary={selectedBeneficiary} />
+          </Modal>
+        )}
+
       </div>
+      <SetSpendingLimits/>
     </div>
   );
 };
 
 // ============================================================
-// REGISTER BENEFICIARY FORM
+// DETAILS MODAL
 // ============================================================
+
+const BeneficiaryDetails = ({ beneficiary }) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+    {[
+      ["Address", formatters.formatAddress(beneficiary.address)],
+      ["Total Received", `${Number(beneficiary.totalReceived).toFixed(2)} RUSD`],
+      ["Total Spent", `${Number(beneficiary.totalSpent).toFixed(2)} RUSD`],
+      ["Current Balance", `${Number(beneficiary.currentBalance).toFixed(2)} RUSD`],
+    ].map(([label, val]) => (
+      <div key={label}>
+        <p className="text-xs text-gray-400 font-mono mb-1">
+          {label}
+        </p>
+        <p className="font-semibold">{val}</p>
+      </div>
+    ))}
+
+  </div>
+);
+
+// ============================================================
+// REGISTER FORM
+// ============================================================
+
 const RegisterBeneficiaryForm = ({ onSuccess }) => {
-  const { chainId, provider } = useWeb3(); // ✅ TAKE provider FROM WEB3 HOOK
+
+  const { chainId, provider } = useWeb3();
   const chainKey = getChainKey(chainId);
 
   const reliefManager = useReliefManager(
@@ -1440,25 +1809,18 @@ const RegisterBeneficiaryForm = ({ onSuccess }) => {
     setError("");
 
     try {
-      if (!validators.isAddress(formData.walletAddress)) {
-        setError("Invalid wallet address");
-        return;
-      }
+      if (!validators.isAddress(formData.walletAddress))
+        throw new Error("Invalid wallet address");
 
-      if (!reliefManager?.writeContract) {
-        setError("Wallet not connected. Please connect MetaMask.");
-        return;
-      }
+      if (!reliefManager?.writeContract)
+        throw new Error("Wallet not connected");
 
-      if (!provider) {
-        setError("Provider not ready");
-        return;
-      }
+      if (!provider)
+        throw new Error("Provider not ready");
 
       setTxStatus("pending");
 
-      // ✅ Upload to backend -> IPFS
-      const response = await fetch(
+      const res = await fetch(
         "http://localhost:5000/api/beneficiary/upload-profile",
         {
           method: "POST",
@@ -1467,124 +1829,57 @@ const RegisterBeneficiaryForm = ({ onSuccess }) => {
         }
       );
 
-      const ipfsData = await response.json();
-      if (!ipfsData.success) throw new Error(ipfsData.error);
+      const ipfs = await res.json();
+      if (!ipfs.success) throw new Error(ipfs.error);
 
-      // ✅ Check chain
-      const net = await provider.getNetwork();
-      if (Number(net.chainId) !== 80002) {
-        throw new Error("Wrong network. Switch to Polygon Amoy (80002).");
-      }
+      const overrides = await getLegacyOverrides(
+        reliefManager.writeContract,
+        600000
+      );
 
-      // ✅ IMPORTANT FIX: LEGACY GAS (Amoy safe)
-      const gasPriceHex = await provider.send("eth_gasPrice", []);
-      const gasPrice = BigInt(gasPriceHex);
-
-      console.log("⛽ gasPrice:", gasPrice.toString());
-
-      // ✅ Simulation first (good practice)
-      console.log("🧪 Simulating registerBeneficiary...");
       await reliefManager.writeContract.registerBeneficiary.staticCall(
         formData.walletAddress,
-        ipfsData.cid
-      );
-      console.log("✅ Simulation passed");
-
-      console.log("📝 Sending registerBeneficiary tx...");
-      const tx = await reliefManager.writeContract.registerBeneficiary(
-        formData.walletAddress,
-        ipfsData.cid,
-        {
-          gasLimit: 600000,
-          gasPrice: gasPrice, // ✅ THIS FIXES INTERNAL JSON RPC ERROR
-        }
+        ipfs.cid
       );
 
-      console.log("⛓️ TX Hash:", tx.hash);
+      const tx =
+        await reliefManager.writeContract.registerBeneficiary(
+          formData.walletAddress,
+          ipfs.cid,
+          overrides
+        );
+
       setTxHash(tx.hash);
-
       await tx.wait();
+
       setTxStatus("success");
+      setTimeout(() => onSuccess(), 1200);
 
-      setTimeout(() => onSuccess(), 1500);
     } catch (err) {
-      console.error("❌ registerBeneficiary failed:", err);
-
-      setError(
-        err?.reason ||
-          err?.shortMessage ||
-          err?.info?.error?.message ||
-          err?.message ||
-          "Failed to register beneficiary"
-      );
-
+      console.error(err);
+      setError(err?.message || "Registration failed");
       setTxStatus("error");
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="label">Full Name</label>
-        <input
-          type="text"
-          className="input-field"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-        />
-      </div>
 
-      <div>
-        <label className="label">Phone Number</label>
+      {["name","phone","address","walletAddress","additionalInfo"].map((k) => (
         <input
-          type="tel"
-          className="input-field"
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          required
-        />
-      </div>
-
-      <div>
-        <label className="label">Physical Address</label>
-        <textarea
-          className="input-field"
-          rows="3"
-          value={formData.address}
-          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-          required
-        />
-      </div>
-
-      <div>
-        <label className="label">Wallet Address</label>
-        <input
-          type="text"
-          className="input-field font-mono"
-          value={formData.walletAddress}
+          key={k}
+          required={k !== "additionalInfo"}
+          placeholder={k}
+          value={formData[k]}
           onChange={(e) =>
-            setFormData({ ...formData, walletAddress: e.target.value })
+            setFormData({ ...formData, [k]: e.target.value })
           }
-          placeholder="0x..."
-          required
+          className="w-full bg-gray-950/60 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500"
         />
-      </div>
-
-      <div>
-        <label className="label">Additional Information (Optional)</label>
-        <textarea
-          className="input-field"
-          rows="2"
-          value={formData.additionalInfo}
-          onChange={(e) =>
-            setFormData({ ...formData, additionalInfo: e.target.value })
-          }
-        />
-      </div>
+      ))}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg">
           {error}
         </div>
       )}
@@ -1592,21 +1887,76 @@ const RegisterBeneficiaryForm = ({ onSuccess }) => {
       <TransactionStatus status={txStatus} hash={txHash} error={error} />
 
       <button
-        type="submit"
-        className="btn-primary w-full"
         disabled={txStatus === "pending"}
+        className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 font-mono font-semibold hover:shadow-xl hover:shadow-cyan-500/40 disabled:opacity-50"
       >
-        {txStatus === "pending" ? "Registering..." : "Register Beneficiary"}
+        {txStatus === "pending"
+          ? "Registering..."
+          : "Register Beneficiary"}
       </button>
+
     </form>
   );
 };
 
+const skeletonCSS = `
+.sk {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255,255,255,0.07);
+  border-radius: 12px;
+}
+.sk::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.08),
+    transparent
+  );
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+`;
 
-// ============================================================
-// MERCHANT MANAGEMENT
-// ============================================================
+const MerchantSkeleton = () => (
+  <div className="min-h-screen bg-[#0B0F14] text-white">
+    <style>{skeletonCSS}</style>
+
+    <div className="max-w-7xl mx-auto px-6 py-10">
+
+      <div className="mb-8">
+        <div className="sk h-3 w-32 mb-2" />
+        <div className="sk h-8 w-64" />
+      </div>
+
+      <div className="flex gap-3 mb-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="sk h-8 w-20" />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="sk h-48" />
+        ))}
+      </div>
+
+    </div>
+  </div>
+);
+
+/* ============================================================
+   MERCHANT MANAGEMENT
+============================================================ */
+
 export const MerchantManagement = () => {
+
   const { chainId } = useWeb3();
   const chainKey = getChainKey(chainId);
 
@@ -1616,43 +1966,43 @@ export const MerchantManagement = () => {
   );
 
   const [merchants, setMerchants] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-
   const [showModal, setShowModal] = useState(false);
   const [filterCategory, setFilterCategory] = useState("ALL");
+
+  /* ================= LOAD ================= */
 
   const loadMerchants = async () => {
     try {
       setLoading(true);
 
-      if (!reliefManager?.readContract)
-        throw new Error("ReliefManager contract not ready");
-
       const list = await reliefManager.getAllMerchants();
-      const uniqueList = [...new Set(list)];
+      const unique = [...new Set(list)];
 
-      const merchantList = await Promise.all(
-        uniqueList.map(async (addr) => {
-          const details = await reliefManager.getMerchantDetails(addr);
-          return { address: addr, ...details };
+      const data = await Promise.all(
+        unique.map(async (addr) => {
+          const d = await reliefManager.getMerchantDetails(addr);
+          return { address: addr, ...d };
         })
       );
 
-      setMerchants(merchantList);
-    } catch (error) {
-      console.error("Failed to load merchants:", error);
+      setMerchants(data);
+    } catch {
       setMerchants([]);
     } finally {
       setLoading(false);
     }
   };
 
+
+
+  
   useEffect(() => {
     if (!reliefManager?.readContract) return;
     loadMerchants();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reliefManager?.readContract]);
+
 
 const handleRevoke = async (merchant) => {
   try {
@@ -1762,142 +2112,166 @@ const handleReWhitelist = async (merchant) => {
 };
 
 
-  const filteredMerchants =
+  const filtered =
     filterCategory === "ALL"
       ? merchants
       : merchants.filter((m) => m.category === filterCategory);
 
-  if (loading) return <LoadingSpinner text="Loading merchants..." />;
+  if (loading) return <MerchantSkeleton />;
+
+
+
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Merchant Management
-        </h1>
+    <div className="min-h-screen bg-[#0B0F14] text-white relative">
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="btn-primary"
-          disabled={actionLoading}
-        >
-          ➕ Add Merchant
-        </button>
-      </div>
+      {/* GRID */}
+      <div
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(6,182,212,.12) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(6,182,212,.12) 1px, transparent 1px)
+          `,
+          backgroundSize: "45px 45px",
+        }}
+      />
 
-      <div className="mb-6">
-        <div className="flex space-x-2">
+      <div className="relative max-w-7xl mx-auto px-6 py-10">
+
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-8">
+          <div>
+            <p className="text-xs uppercase font-mono text-cyan-400 mb-1">
+              Access Control
+            </p>
+            <h1 className="text-4xl font-bold">
+              Merchant Management
+            </h1>
+          </div>
+
+          <button
+            onClick={() => setShowModal(true)}
+            disabled={actionLoading}
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-500 text-sm font-mono font-semibold hover:shadow-lg hover:shadow-cyan-500/40 disabled:opacity-50"
+          >
+            + Add Merchant
+          </button>
+        </div>
+
+        {/* FILTERS */}
+        <div className="flex gap-2 mb-6 flex-wrap">
           {["ALL", "FOOD", "MEDICAL", "SHELTER"].map((cat) => (
             <button
               key={cat}
               onClick={() => setFilterCategory(cat)}
-              className={`px-4 py-2 rounded-lg ${
-                filterCategory === cat
-                  ? "bg-primary-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-              disabled={actionLoading}
+              className={`px-3 py-1.5 rounded-md text-xs font-mono border
+                ${
+                  filterCategory === cat
+                    ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-400"
+                    : "border-gray-700 text-gray-400 hover:border-cyan-500/40"
+                }`}
             >
               {cat}
             </button>
           ))}
         </div>
-      </div>
 
-      {filteredMerchants.length === 0 ? (
-        <div className="card text-center py-12">
-          <p className="text-gray-600">No merchants found</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMerchants.map((merchant) => (
-            <div key={merchant.address} className="card">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {merchant.name || "Unnamed Merchant"}
-                </h3>
+        {/* CARDS */}
+        {filtered.length === 0 ? (
+          <div className="py-20 text-center text-gray-400 font-mono">
+            No merchants found.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
-                <div className="flex flex-col items-end gap-2">
-                  <span className="badge badge-info">{merchant.category}</span>
+            {filtered.map((m) => (
+              <div
+                key={m.address}
+                className="bg-gray-900/50 border border-gray-800 rounded-xl p-5"
+              >
 
-                  {merchant.isRegistered ? (
-                    <span className="badge badge-success">ACTIVE</span>
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-semibold">
+                    {m.name || "Unnamed Merchant"}
+                  </h3>
+
+                  <span
+                    className={`px-2 py-[2px] text-xs rounded-md font-mono
+                      ${
+                        m.isRegistered
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          : "bg-red-500/10 text-red-400 border border-red-500/20"
+                      }`}
+                  >
+                    {m.isRegistered ? "ACTIVE" : "REVOKED"}
+                  </span>
+                </div>
+
+                <p className="text-xs font-mono text-cyan-400 mb-2">
+                  {formatters.formatAddress(m.address)}
+                </p>
+
+                <div className="text-sm text-gray-300 space-y-1">
+                  <p>Category: {m.category}</p>
+                  <p>Total Received: {Number(m.totalReceived).toFixed(2)} RUSD</p>
+                  <p>Balance: {Number(m.currentBalance).toFixed(2)} RUSD</p>
+                </div>
+
+                <div className="mt-4">
+                  {m.isRegistered ? (
+                    <button
+                      onClick={() => handleRevoke(m)}
+                      disabled={actionLoading}
+                      className="w-full px-3 py-2 rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 text-sm font-mono"
+                    >
+                      Revoke
+                    </button>
                   ) : (
-                    <span className="badge badge-danger">REVOKED</span>
+                    <button
+                      onClick={() => handleReWhitelist(m)}
+                      disabled={actionLoading}
+                      className="w-full px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 text-sm font-mono"
+                    >
+                      Re-Whitelist
+                    </button>
                   )}
                 </div>
+
               </div>
+            ))}
 
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Address:</span>
-                  <span className="font-mono">
-                    {formatters.formatAddress(merchant.address)}
-                  </span>
-                </div>
+          </div>
+        )}
 
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Received:</span>
-                  <span className="font-semibold">
-                    {parseFloat(merchant.totalReceived).toFixed(2)} RUSD
-                  </span>
-                </div>
+        {/* MODAL */}
+        {showModal && (
+          <Modal
+            isOpen={showModal}
+            onClose={() => setShowModal(false)}
+            title="Register Merchant"
+          >
+            <RegisterMerchantForm
+              onSuccess={() => {
+                setShowModal(false);
+                loadMerchants();
+              }}
+            />
+          </Modal>
+        )}
 
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Balance:</span>
-                  <span className="font-semibold">
-                    {parseFloat(merchant.currentBalance).toFixed(2)} RUSD
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-5 flex gap-3">
-                {merchant.isRegistered ? (
-                  <button
-                    onClick={() => handleRevoke(merchant)}
-                    className="btn-secondary bg-red-600 hover:bg-red-700 text-white w-full"
-                    disabled={actionLoading}
-                  >
-                    Revoke
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleReWhitelist(merchant)}
-                    className="btn-secondary bg-green-600 hover:bg-green-700 text-white w-full"
-                    disabled={actionLoading}
-                  >
-                    Re-Whitelist
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {showModal && (
-        <Modal
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-          title="Register Merchant"
-        >
-          <RegisterMerchantForm
-            onSuccess={() => {
-              setShowModal(false);
-              loadMerchants();
-            }}
-          />
-        </Modal>
-      )}
+      </div>
     </div>
   );
 };
 
-// ============================================================
-// REGISTER MERCHANT FORM
-// ============================================================
+/* ============================================================
+   REGISTER MERCHANT FORM
+============================================================ */
+
 const RegisterMerchantForm = ({ onSuccess }) => {
-  const { chainId, provider } = useWeb3(); // ✅ take provider from hook
+
+  const { chainId, provider } = useWeb3();
   const chainKey = getChainKey(chainId);
 
   const reliefManager = useReliefManager(
@@ -1911,8 +2285,6 @@ const RegisterMerchantForm = ({ onSuccess }) => {
     address: "",
     walletAddress: "",
     category: "FOOD",
-    businessLicense: "",
-    additionalInfo: "",
   });
 
   const [txStatus, setTxStatus] = useState(null);
@@ -1924,26 +2296,18 @@ const RegisterMerchantForm = ({ onSuccess }) => {
     setError("");
 
     try {
-      if (!validators.isAddress(formData.walletAddress)) {
-        setError("Invalid wallet address");
-        return;
-      }
+      if (!validators.isAddress(formData.walletAddress))
+        throw new Error("Invalid wallet address");
 
-      if (!reliefManager?.writeContract) {
-        setError("Wallet not connected. Please connect MetaMask.");
-        return;
-      }
+      if (!reliefManager?.writeContract)
+        throw new Error("Wallet not connected");
 
-      if (!provider) {
-        setError("Provider not ready");
-        return;
-      }
+      if (!provider) throw new Error("Provider not ready");
 
       setTxStatus("pending");
       setTxHash("");
 
-      // ✅ upload profile -> backend -> IPFS
-      const response = await fetch(
+      const res = await fetch(
         "http://localhost:5000/api/merchant/upload-profile",
         {
           method: "POST",
@@ -1952,134 +2316,69 @@ const RegisterMerchantForm = ({ onSuccess }) => {
         }
       );
 
-      const ipfsData = await response.json();
+      const ipfsData = await res.json();
       if (!ipfsData.success) throw new Error(ipfsData.error);
 
-      // ✅ Ensure correct chain
-      const net = await provider.getNetwork();
-      if (Number(net.chainId) !== 80002) {
-        throw new Error("Wrong network. Switch to Polygon Amoy (80002).");
-      }
-
-      // ✅ Polygon Amoy safe gas: use legacy gasPrice
       const gasPriceHex = await provider.send("eth_gasPrice", []);
       const gasPrice = BigInt(gasPriceHex);
-      console.log("⛽ gasPrice:", gasPrice.toString());
 
-      // ✅ Simulate
-      console.log("🧪 Simulating registerMerchant...");
       await reliefManager.writeContract.registerMerchant.staticCall(
         formData.walletAddress,
-        ipfsData.categoryEnum, // backend gives correct enum index
+        ipfsData.categoryEnum,
         formData.name,
         ipfsData.cid
       );
-      console.log("✅ Simulation passed");
 
-      // ✅ Send TX with legacy gas
-      console.log("📝 Sending registerMerchant tx...");
       const tx = await reliefManager.writeContract.registerMerchant(
         formData.walletAddress,
         ipfsData.categoryEnum,
         formData.name,
         ipfsData.cid,
-        {
-          gasLimit: 700000,
-          gasPrice: gasPrice,
-        }
+        { gasLimit: 700000, gasPrice }
       );
 
-      console.log("⛓️ TX Hash:", tx.hash);
       setTxHash(tx.hash);
-
       await tx.wait();
+
       setTxStatus("success");
+      setTimeout(() => onSuccess(), 1200);
 
-      setTimeout(() => onSuccess(), 1500);
     } catch (err) {
-      console.error("❌ registerMerchant failed:", err);
-
-      setError(
-        err?.reason ||
-          err?.shortMessage ||
-          err?.info?.error?.message ||
-          err?.message ||
-          "Failed to register merchant"
-      );
-
+      setError(err?.message || "Registration failed");
       setTxStatus("error");
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="label">Business Name</label>
+
+      {["name", "phone", "address", "walletAddress"].map((k) => (
         <input
-          type="text"
-          className="input-field"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-        />
-      </div>
-
-      <div>
-        <label className="label">Category</label>
-        <select
-          className="input-field"
-          value={formData.category}
+          key={k}
+          className="w-full bg-gray-950/60 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500"
+          placeholder={k}
+          value={formData[k]}
           onChange={(e) =>
-            setFormData({ ...formData, category: e.target.value })
-          }
-          required
-        >
-          <option value="FOOD">Food</option>
-          <option value="MEDICAL">Medical</option>
-          <option value="SHELTER">Shelter</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="label">Phone Number</label>
-        <input
-          type="tel"
-          className="input-field"
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          required
-        />
-      </div>
-
-      <div>
-        <label className="label">Physical Address</label>
-        <textarea
-          className="input-field"
-          rows="3"
-          value={formData.address}
-          onChange={(e) =>
-            setFormData({ ...formData, address: e.target.value })
+            setFormData({ ...formData, [k]: e.target.value })
           }
           required
         />
-      </div>
+      ))}
 
-      <div>
-        <label className="label">Wallet Address</label>
-        <input
-          type="text"
-          className="input-field font-mono"
-          value={formData.walletAddress}
-          onChange={(e) =>
-            setFormData({ ...formData, walletAddress: e.target.value })
-          }
-          placeholder="0x..."
-          required
-        />
-      </div>
+      <select
+        className="w-full bg-gray-950/60 border border-gray-700 rounded-lg px-4 py-2"
+        value={formData.category}
+        onChange={(e) =>
+          setFormData({ ...formData, category: e.target.value })
+        }
+      >
+        <option value="FOOD">Food</option>
+        <option value="MEDICAL">Medical</option>
+        <option value="SHELTER">Shelter</option>
+      </select>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg text-sm">
           {error}
         </div>
       )}
@@ -2088,11 +2387,12 @@ const RegisterMerchantForm = ({ onSuccess }) => {
 
       <button
         type="submit"
-        className="btn-primary w-full"
         disabled={txStatus === "pending"}
+        className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-500 font-mono font-semibold hover:shadow-lg hover:shadow-cyan-500/40 disabled:opacity-50"
       >
         {txStatus === "pending" ? "Registering..." : "Register Merchant"}
       </button>
+
     </form>
   );
 };
@@ -2101,7 +2401,32 @@ const RegisterMerchantForm = ({ onSuccess }) => {
 // ============================================================
 // DISTRIBUTE FUNDS
 // ============================================================
+
+const DistributeSkeleton = () => (
+  <div className="min-h-screen bg-[#0B0F14] text-white">
+    <style>{skeletonCSS}</style>
+
+    <div className="max-w-4xl mx-auto px-6 py-10 space-y-6">
+
+      <div>
+        <div className="sk h-3 w-32 mb-2" />
+        <div className="sk h-8 w-64" />
+      </div>
+
+      <div className="sk h-24 w-full" />
+
+      <div className="sk h-56 w-full" />
+
+    </div>
+  </div>
+);
+
+/* ============================================================
+   DISTRIBUTE FUNDS
+============================================================ */
+
 export const DistributeFunds = () => {
+
   const { account, chainId, provider } = useWeb3();
   const chainKey = getChainKey(chainId);
 
@@ -2123,50 +2448,41 @@ export const DistributeFunds = () => {
   const [txHash, setTxHash] = useState("");
   const [error, setError] = useState("");
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [contractBalance, setContractBalance] = useState("0");
+
+  /* ================= LOAD ================= */
 
   const loadBeneficiaries = async () => {
     try {
       setLoading(true);
 
-      if (!reliefManager?.readContract)
-        throw new Error("ReliefManager contract not ready");
-
       const list = await reliefManager.readContract.getAllBeneficiaries();
 
-      const beneficiaryList = await Promise.all(
+      const data = await Promise.all(
         list.map(async (addr) => {
-          const details = await reliefManager.readContract.getBeneficiaryDetails(
-            addr
-          );
-
-          // If your details struct differs, update these keys
+          const d = await reliefManager.readContract.getBeneficiaryDetails(addr);
           return {
             address: addr,
-            ...details,
-            currentBalance: details?.currentBalance
-              ? ethers.formatEther(details.currentBalance)
+            ...d,
+            currentBalance: d?.currentBalance
+              ? ethers.formatEther(d.currentBalance)
               : "0",
           };
         })
       );
 
-      setBeneficiaries(beneficiaryList);
+      setBeneficiaries(data);
 
-      // ✅ Load ReliefManager's RUSD balance
       if (reliefUSD?.readContract) {
-        const managerAddress = chainKey
-          ? addresses?.[chainKey]?.ReliefManager
-          : null;
-
-        if (managerAddress) {
-          const balance = await reliefUSD.readContract.balanceOf(managerAddress);
-          setContractBalance(ethers.formatEther(balance));
+        const managerAddr = addresses?.[chainKey]?.ReliefManager;
+        if (managerAddr) {
+          const bal = await reliefUSD.readContract.balanceOf(managerAddr);
+          setContractBalance(ethers.formatEther(bal));
         }
       }
-    } catch (err) {
-      console.error("Failed to load beneficiaries:", err);
+
+    } catch {
       setBeneficiaries([]);
     } finally {
       setLoading(false);
@@ -2177,217 +2493,219 @@ export const DistributeFunds = () => {
     if (!reliefManager?.readContract) return;
     if (!reliefUSD?.readContract) return;
     loadBeneficiaries();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reliefManager?.readContract, reliefUSD?.readContract]);
+
+  const selectedBenObj = beneficiaries.find(
+    (b) => b.address === selectedBeneficiary
+  );
+
+  /* ================= DISTRIBUTE ================= */
 
   const handleDistribute = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      if (!selectedBeneficiary || !amount || parseFloat(amount) <= 0) {
-        setError("Please select beneficiary and enter valid amount");
-        return;
-      }
 
-      if (!reliefManager?.writeContract) {
-        setError("Wallet not connected. Please connect MetaMask.");
-        return;
-      }
+      if (!selectedBeneficiary || !amount || Number(amount) <= 0)
+        throw new Error("Select beneficiary and valid amount");
 
-      if (!provider) {
-        setError("Provider not ready");
-        return;
-      }
-
-      // ✅ Pre-check balance
-      if (parseFloat(amount) > parseFloat(contractBalance)) {
-        setError(
-          `Insufficient RUSD in ReliefManager contract. Available: ${parseFloat(
+      if (Number(amount) > Number(contractBalance))
+        throw new Error(
+          `Insufficient contract balance. Available ${Number(
             contractBalance
           ).toFixed(2)} RUSD`
         );
-        return;
-      }
 
       setTxStatus("pending");
       setTxHash("");
 
-      const amountWei = ethers.parseEther(amount.toString());
+      const amountWei = ethers.parseEther(amount);
 
-      // ✅ DEBUG LOGS
-      console.log("🚀 Distribute Funds Debug:");
-      console.log("👤 Admin account:", account);
-      console.log("🎯 Beneficiary:", selectedBeneficiary);
-      console.log("💰 Amount (RUSD):", amount);
-      console.log("💰 Amount (wei):", amountWei.toString());
-      console.log("💼 Contract Balance:", contractBalance, "RUSD");
-
-      // ✅ Simulation call
-      console.log("🧪 Running simulation...");
       await reliefManager.writeContract.distributeFunds.staticCall(
         selectedBeneficiary,
         amountWei
       );
-      console.log("✅ Simulation passed");
 
-      // ✅ IMPORTANT FIX: LEGACY GAS (no EIP-1559)
       const gasPrice = await provider.send("eth_gasPrice", []);
-      console.log("⛽ legacy gasPrice:", gasPrice.toString());
 
-      // ✅ Send tx with legacy gasPrice
-      console.log("📝 Sending transaction...");
       const tx = await reliefManager.writeContract.distributeFunds(
         selectedBeneficiary,
         amountWei,
-        {
-          gasLimit: 300000,
-          gasPrice, // ✅ fix
-        }
+        { gasLimit: 300000, gasPrice }
       );
 
-      console.log("⛓️ TX Hash:", tx.hash);
       setTxHash(tx.hash);
-
-      console.log("⏳ Waiting for confirmation...");
-      const receipt = await tx.wait();
-      console.log("✅ TX Confirmed in block:", receipt.blockNumber);
+      await tx.wait();
 
       setTxStatus("success");
       setAmount("");
       setSelectedBeneficiary("");
 
       await loadBeneficiaries();
+
     } catch (err) {
-      console.error("❌ Distribute failed FULL ERROR:", err);
-
-      let errorMessage =
-        err?.reason ||
-        err?.shortMessage ||
-        err?.info?.error?.message ||
-        err?.message ||
-        "Transaction failed";
-
-      // extra friendly messages
-      if (errorMessage.includes("AccessControl")) {
-        errorMessage =
-          "Missing permission (ADMIN / MANAGER role). Your wallet cannot distribute.";
-      } else if (errorMessage.toLowerCase().includes("user rejected")) {
-        errorMessage = "Transaction rejected by user";
-      } else if (errorMessage.toLowerCase().includes("gas")) {
-        errorMessage =
-          "Gas estimation / send failed. (RPC issue). Retrying with legacy gasPrice should fix.";
-      }
-
-      console.log("🧾 Extracted error:", errorMessage);
-
-      setError(errorMessage);
+      setError(err?.message || "Transaction failed");
       setTxStatus("error");
     }
   };
 
-  if (loading) return <LoadingSpinner text="Loading beneficiaries..." />;
+  if (loading) return <DistributeSkeleton />;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">
-        Distribute Relief Funds
-      </h1>
+    <div className="min-h-screen bg-[#0B0F14] text-white relative">
 
-      {/* ✅ Contract Balance Display */}
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-blue-600 font-semibold">
-              ReliefManager Contract Balance
-            </p>
-            <p className="text-2xl font-bold text-blue-900 mt-1">
-              {parseFloat(contractBalance).toFixed(2)} RUSD
-            </p>
-          </div>
-          <div className="text-4xl">💰</div>
+      {/* GRID */}
+      <div
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(6,182,212,.12) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(6,182,212,.12) 1px, transparent 1px)
+          `,
+          backgroundSize: "45px 45px",
+        }}
+      />
+
+      <div className="relative max-w-4xl mx-auto px-6 py-10">
+
+        {/* HEADER */}
+        <div className="mb-8">
+          <p className="text-xs uppercase font-mono text-cyan-400 mb-1">
+            Treasury
+          </p>
+          <h1 className="text-4xl font-bold">
+            Distribute Relief Funds
+          </h1>
         </div>
 
-        {parseFloat(contractBalance) === 0 && (
-          <p className="text-sm text-red-600 mt-2">
-            ⚠️ Contract has no RUSD. Mint tokens to the ReliefManager address first.
+        {/* CONTRACT BALANCE */}
+        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-5 mb-6">
+          <p className="text-xs text-gray-400 font-mono">
+            ReliefManager Balance
           </p>
-        )}
-      </div>
+          <p className="text-2xl font-bold text-emerald-400 mt-1">
+            {Number(contractBalance).toFixed(2)} RUSD
+          </p>
+        </div>
 
-      <div className="card">
-        <form onSubmit={handleDistribute} className="space-y-6">
-          <div>
-            <label className="label">Select Beneficiary</label>
-            <select
-              className="input-field"
-              value={selectedBeneficiary}
-              onChange={(e) => setSelectedBeneficiary(e.target.value)}
-              required
-            >
-              <option value="">-- Select Beneficiary --</option>
-              {beneficiaries.map((ben) => (
-                <option key={ben.address} value={ben.address}>
-                  {formatters.formatAddress(ben.address)} - Balance:{" "}
-                  {parseFloat(ben.currentBalance || 0).toFixed(2)} RUSD
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* FORM */}
+        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
 
-          <div>
-            <label className="label">Amount (RUSD)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              max={contractBalance}
-              className="input-field"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Enter amount to distribute"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Maximum available: {parseFloat(contractBalance).toFixed(2)} RUSD
-            </p>
-          </div>
+          <form onSubmit={handleDistribute} className="space-y-6">
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
+            {/* SELECT BENEFICIARY */}
+            <div>
+              <label className="text-sm text-gray-400 font-mono">
+                Beneficiary
+              </label>
+
+              <select
+                className="w-full mt-1 bg-gray-950/60 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500"
+                value={selectedBeneficiary}
+                onChange={(e) => setSelectedBeneficiary(e.target.value)}
+              >
+                <option value="">-- Select Beneficiary --</option>
+                {beneficiaries.map((b) => (
+                  <option key={b.address} value={b.address}>
+                    {formatters.formatAddress(b.address)}
+                  </option>
+                ))}
+              </select>
+
+              {/* CURRENT BALANCE */}
+              {selectedBenObj && (
+                <p className="mt-1 text-xs text-gray-400">
+                  Beneficiary Balance:{" "}
+                  <span className="text-emerald-400 font-mono">
+                    {Number(selectedBenObj.currentBalance).toFixed(2)} RUSD
+                  </span>
+                </p>
+              )}
             </div>
-          )}
 
-          <TransactionStatus status={txStatus} hash={txHash} error={error} />
+            {/* AMOUNT */}
+            <div>
+              <label className="text-sm text-gray-400 font-mono">
+                Amount (RUSD)
+              </label>
 
-          <button
-            type="submit"
-            className="btn-primary w-full"
-            disabled={txStatus === "pending" || parseFloat(contractBalance) === 0}
-          >
-            {txStatus === "pending" ? "Distributing..." : "Distribute Funds"}
-          </button>
-        </form>
-      </div>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="w-full mt-1 bg-gray-950/60 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="Enter amount"
+              />
 
-      {/* ✅ Help Section */}
-      <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-        <h3 className="font-semibold text-gray-900 mb-2">Troubleshooting</h3>
-        <ul className="text-sm text-gray-600 space-y-1">
-          <li>• Ensure ReliefManager holds RUSD tokens</li>
-          <li>• Your account must have proper role permission</li>
-          <li>• Beneficiary must be whitelisted</li>
-          <li>• RPC must support gas calls (fixed using legacy gasPrice)</li>
-        </ul>
+              <p className="mt-1 text-xs text-gray-400">
+                Max: {Number(contractBalance).toFixed(2)} RUSD
+              </p>
+            </div>
+
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <TransactionStatus status={txStatus} hash={txHash} error={error} />
+
+            <button
+              type="submit"
+              disabled={txStatus === "pending"}
+              className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-emerald-500 font-mono font-semibold hover:shadow-lg hover:shadow-cyan-500/40 disabled:opacity-50"
+            >
+              {txStatus === "pending" ? "Distributing..." : "Distribute Funds"}
+            </button>
+
+          </form>
+
+        </div>
+
       </div>
     </div>
   );
 };
 // ============================================================
 // SET SPENDING LIMITS
-// ============================================================
+// ===========================================================
+
+const SpendingSkeleton = () => (
+  <div className="max-w-5xl mx-auto px-4 py-8 text-white">
+
+    <div className="mb-6">
+      <SkeletonBlock className="h-3 w-40 mb-2" />
+      <SkeletonBlock className="h-8 w-64" />
+    </div>
+
+    <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 space-y-4">
+
+      <SkeletonBlock className="h-10 w-full" />
+
+      {[1,2,3].map(i => (
+        <div key={i} className="border border-gray-800 rounded-lg p-4 space-y-3">
+          <div className="flex justify-between">
+            <SkeletonBlock className="h-4 w-24" />
+            <SkeletonBlock className="h-4 w-32" />
+          </div>
+          <SkeletonBlock className="h-10 w-full" />
+        </div>
+      ))}
+
+    </div>
+
+  </div>
+);
+
+/* ============================================================
+   MAIN COMPONENT
+============================================================ */
+
 export const SetSpendingLimits = () => {
+
   const { chainId } = useWeb3();
   const chainKey = getChainKey(chainId);
 
@@ -2405,14 +2723,13 @@ export const SetSpendingLimits = () => {
     SHELTER: "",
   });
 
-  // ✅ show current limits
   const [currentLimits, setCurrentLimits] = useState({
     FOOD: "0",
     MEDICAL: "0",
     SHELTER: "0",
   });
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [txStatus, setTxStatus] = useState(null);
   const [txHash, setTxHash] = useState(null);
@@ -2420,246 +2737,237 @@ export const SetSpendingLimits = () => {
 
   const categories = ["FOOD", "MEDICAL", "SHELTER"];
 
-  // -----------------------------
-  // LOAD BENEFICIARIES
-  // -----------------------------
+  /* ================= LOAD BENEFICIARIES ================= */
+
   const loadBeneficiaries = async () => {
     try {
       setLoading(true);
 
       if (!reliefManager?.readContract)
-        throw new Error("ReliefManager contract not ready");
+        throw new Error("ReliefManager not ready");
 
       const list = await reliefManager.getAllBeneficiaries();
 
-      const beneficiaryList = await Promise.all(
+      const data = await Promise.all(
         list.map(async (addr) => {
-          const details = await reliefManager.getBeneficiaryDetails(addr);
-          return { address: addr, ...details };
+          const d = await reliefManager.getBeneficiaryDetails(addr);
+          return { address: addr, ...d };
         })
       );
 
-      setBeneficiaries(beneficiaryList);
+      setBeneficiaries(data);
     } catch (err) {
-      console.error("Failed to load beneficiaries:", err);
+      console.error(err);
       setBeneficiaries([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // -----------------------------
-  // LOAD CURRENT LIMITS
-  // -----------------------------
+  /* ================= LOAD CURRENT LIMITS ================= */
+
   const loadCurrentLimits = async (beneficiaryAddr) => {
     try {
-      if (!beneficiaryAddr) return;
-      if (!reliefManager?.readContract) return;
+      if (!beneficiaryAddr || !reliefManager?.readContract) return;
 
-      const newCurrent = {};
+      const next = {};
 
       for (const cat of categories) {
-        // ✅ convert category to enum (assuming categoryMapping has toEnum)
-        // if yours is different, replace this mapping logic
         const enumValue =
           cat === "FOOD" ? 0 : cat === "MEDICAL" ? 1 : 2;
 
-        // ✅ IMPORTANT: change this based on your contract
-        // Option A: getSpendingLimit(beneficiary, enum)
-        // const limitWei = await reliefManager.readContract.getSpendingLimit(beneficiaryAddr, enumValue);
+        const limitWei =
+          await reliefManager.readContract.spendingLimits(
+            beneficiaryAddr,
+            enumValue
+          );
 
-        // Option B: spendingLimits(address, enum) public mapping getter
-        const limitWei = await reliefManager.readContract.spendingLimits(
-          beneficiaryAddr,
-          enumValue
-        );
-
-        newCurrent[cat] = ethers.formatEther(limitWei);
+        next[cat] = ethers.formatEther(limitWei);
       }
 
       setCurrentLimits({
-        FOOD: newCurrent.FOOD || "0",
-        MEDICAL: newCurrent.MEDICAL || "0",
-        SHELTER: newCurrent.SHELTER || "0",
+        FOOD: next.FOOD || "0",
+        MEDICAL: next.MEDICAL || "0",
+        SHELTER: next.SHELTER || "0",
       });
     } catch (err) {
-      console.error("Failed to load current limits:", err);
-
-      // don’t break UI
-      setCurrentLimits({
-        FOOD: "0",
-        MEDICAL: "0",
-        SHELTER: "0",
-      });
+      console.error(err);
     }
   };
 
   useEffect(() => {
     if (!reliefManager?.readContract) return;
     loadBeneficiaries();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reliefManager?.readContract]);
 
   useEffect(() => {
     if (!selectedBeneficiary) return;
     loadCurrentLimits(selectedBeneficiary);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBeneficiary]);
 
-  // -----------------------------
-  // SET LIMIT
-  // -----------------------------
+  /* ================= SET LIMIT ================= */
+
   const handleSetLimit = async (category) => {
     setError("");
     setTxHash(null);
 
     try {
-      if (!selectedBeneficiary) throw new Error("Select beneficiary first");
+      if (!selectedBeneficiary)
+        throw new Error("Select beneficiary");
 
       const raw = limits[category];
-      if (!raw || Number(raw) < 0) throw new Error("Enter valid limit amount");
+      if (!raw || Number(raw) < 0)
+        throw new Error("Enter valid amount");
 
       if (!reliefManager?.writeContract)
-        throw new Error("Wallet not connected. Please connect MetaMask.");
+        throw new Error("Wallet not connected");
 
       setTxStatus("pending");
 
       const limitWei = ethers.parseEther(raw.toString());
 
-      // ✅ category enum
       const enumValue =
         category === "FOOD" ? 0 : category === "MEDICAL" ? 1 : 2;
 
-      // ✅ simulate
       await reliefManager.writeContract.setSpendingLimit.staticCall(
         selectedBeneficiary,
         enumValue,
         limitWei
       );
 
-      // ✅ legacy gas overrides (Amoy fix)
-      const txOverrides = await getLegacyOverrides(
-        reliefManager.writeContract,
-        250000
+      const overrides = await getLegacyOverrides(
+        reliefManager.writeContract
       );
 
-      const tx = await reliefManager.writeContract.setSpendingLimit(
-        selectedBeneficiary,
-        enumValue,
-        limitWei,
-        txOverrides
-      );
+      const tx =
+        await reliefManager.writeContract.setSpendingLimit(
+          selectedBeneficiary,
+          enumValue,
+          limitWei,
+          overrides
+        );
 
       setTxHash(tx.hash);
       await tx.wait();
 
       setTxStatus("success");
-
-      // ✅ refresh current limits
       await loadCurrentLimits(selectedBeneficiary);
 
-      // optional reset only this category input
-      setLimits((prev) => ({ ...prev, [category]: "" }));
+      setLimits((p) => ({ ...p, [category]: "" }));
 
       setTimeout(() => setTxStatus(null), 1500);
-    } catch (err) {
-      console.error("❌ set limit failed:", err);
 
-      const msg =
+    } catch (err) {
+      setError(
         err?.reason ||
         err?.shortMessage ||
-        err?.info?.error?.message ||
         err?.message ||
-        "Transaction failed";
-
-      setError(msg);
+        "Transaction failed"
+      );
       setTxStatus("error");
     }
   };
 
-  if (loading) return <LoadingSpinner text="Loading beneficiaries..." />;
+  /* ================= RENDER ================= */
+
+  if (loading) return <SpendingSkeleton />;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">
-        Set Spending Limits
-      </h1>
+    <div className="relative max-w-7xl mx-auto px-4 py-10">
 
-      <div className="card">
-        <div className="space-y-6">
-          {/* Select Beneficiary */}
-          <div>
-            <label className="label">Select Beneficiary</label>
-            <select
-              className="input-field"
-              value={selectedBeneficiary}
-              onChange={(e) => setSelectedBeneficiary(e.target.value)}
-              required
-            >
-              <option value="">-- Select Beneficiary --</option>
-              {beneficiaries.map((ben) => (
-                <option key={ben.address} value={ben.address}>
-                  {formatters.formatAddress(ben.address)}
-                </option>
-              ))}
-            </select>
-          </div>
 
-          {/* Limits */}
+      {/* HEADER */}
+      <div className="mb-6">
+        <p className="text-xs uppercase tracking-wider text-cyan-400 font-mono mb-3">
+          Access Control
+        </p>
+        <h1 className="text-4xl font-bold">
+          Set Spending Limits
+        </h1>
+      </div>
+
+      <div className="bg-gray-900/50 border border-gray-800 rounded-xl py-4 px-6 space-y-6">
+
+        {/* SELECT BENEFICIARY */}
+        <div>
+          <label className="block text-sm text-gray-400 mb-1 font-mono">
+            Select Beneficiary
+          </label>
+          <select
+            value={selectedBeneficiary}
+            onChange={(e) => setSelectedBeneficiary(e.target.value)}
+            className="w-full bg-gray-950/60 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500"
+          >
+            <option value="">-- Select --</option>
+            {beneficiaries.map((ben) => (
+              <option key={ben.address} value={ben.address}>
+                {formatters.formatAddress(ben.address)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* CATEGORY CARDS */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
           {categories.map((category) => (
-            <div key={category} className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-900">{category}</h3>
+            <div
+              key={category}
+              className="border border-gray-800 rounded-lg p-4 space-y-3"
+            >
 
-                {/* ✅ current limit display */}
-                <span className="text-sm text-gray-600">
-                  Current Limit:{" "}
-                  <b>{parseFloat(currentLimits[category] || "0").toFixed(2)} RUSD</b>
+              <div className="flex justify-between items-center">
+                <h3 className="font-semibold">{category}</h3>
+                <span className="text-xs text-gray-400">
+                  Current:{" "}
+                  <b>
+                    {Number(currentLimits[category] || "0").toFixed(2)}
+                  </b>{" "}
+                  RUSD
                 </span>
               </div>
 
-              <div className="flex items-end gap-4">
-                <div className="flex-1">
-                  <label className="label">New Limit (RUSD)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    className="input-field"
-                    value={limits[category]}
-                    onChange={(e) =>
-                      setLimits({ ...limits, [category]: e.target.value })
-                    }
-                    placeholder={`Enter ${category.toLowerCase()} limit`}
-                    disabled={!selectedBeneficiary || txStatus === "pending"}
-                  />
-                </div>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={limits[category]}
+                onChange={(e) =>
+                  setLimits({ ...limits, [category]: e.target.value })
+                }
+                placeholder="New limit"
+                disabled={!selectedBeneficiary || txStatus === "pending"}
+                className="w-full bg-gray-950/60 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500"
+              />
 
-                <button
-                  onClick={() => handleSetLimit(category)}
-                  className="btn-secondary"
-                  disabled={
-                    txStatus === "pending" ||
-                    !selectedBeneficiary ||
-                    !limits[category]
-                  }
-                >
-                  Set Limit
-                </button>
-              </div>
+              <button
+                onClick={() => handleSetLimit(category)}
+                disabled={
+                  !selectedBeneficiary ||
+                  !limits[category] ||
+                  txStatus === "pending"
+                }
+                className="w-full px-3 py-2 rounded-lg bg-cyan-600/20 border border-cyan-500/30 text-cyan-400 text-sm hover:bg-cyan-600/30 disabled:opacity-50 font-mono"
+              >
+                Set Limit
+              </button>
+
             </div>
           ))}
 
-          {/* Errors */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
-          <TransactionStatus status={txStatus} hash={txHash} error={error} />
         </div>
+
+        {/* ERRORS */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-2 rounded text-sm">
+            {error}
+          </div>
+        )}
+
+        <TransactionStatus status={txStatus} hash={txHash} error={error} />
+
       </div>
+
     </div>
   );
 };

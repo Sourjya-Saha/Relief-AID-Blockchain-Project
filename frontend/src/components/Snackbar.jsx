@@ -8,8 +8,16 @@ export const SnackbarProvider = ({ children }) => {
   const [snack, setSnack] = useState(null);
 
   const showSnackbar = (message, type = "info") => {
-    setSnack({ message, type });
-  };
+  const safeMessage =
+    typeof message === "string"
+      ? message
+      : message?.message ||
+        message?.reason ||
+        JSON.stringify(message);
+
+  setSnack({ message: safeMessage, type });
+};
+
 
   const clearSnackbar = () => setSnack(null);
 
@@ -40,7 +48,12 @@ export const SnackbarProvider = ({ children }) => {
             <span className="text-lg">
               {snack.type === "success" ? "✓" : snack.type === "error" ? "✕" : "ℹ"}
             </span>
-            <p className="font-mono text-sm">{snack.message}</p>
+            <p className="font-mono text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[320px]">
+  {typeof snack.message === "string"
+    ? snack.message
+    : JSON.stringify(snack.message)}
+</p>
+
           </div>
         </div>
       )}

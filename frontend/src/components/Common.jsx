@@ -312,7 +312,7 @@ export const TransactionStatus = ({ status, hash, error, onClear }) => {
 
   useEffect(() => {
     if (status === "success")
-      showSnackbar("Transaction confirmed on-chain", "success");
+      showSnackbar("Transaction successful", "success");
 
     if (status === "error")
       showSnackbar(parseTxError(error), "error");
