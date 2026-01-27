@@ -168,6 +168,8 @@ const getChainKey = (chainId) => {
 // ============================================
 // MERCHANT DASHBOARD
 // ============================================
+const API_BASE_URL = process.env.PUBLIC_BACKEND_URL || 'http://localhost:5000';
+
 
 export const MerchantDashboard = () => {
   const { account, chainId } = useWeb3();
@@ -219,7 +221,7 @@ export const MerchantDashboard = () => {
 
   const loadProfile = async (cid) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/profile/${cid}`);
+      const response = await fetch(`${API_BASE_URL}/api/profile/${cid}`);
       const data = await response.json();
       if (data.success) {
         setProfile(data.data);

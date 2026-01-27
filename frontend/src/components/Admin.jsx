@@ -137,6 +137,7 @@ const statusLabel = (s) => {
   return { text: "REJECTED", color: "red" };
 };
 
+const API_BASE_URL = process.env.PUBLIC_BACKEND_URL || 'http://localhost:5000';
 // ============================================================
 // ADMIN DASHBOARD
 // ============================================================
@@ -202,7 +203,7 @@ const fetchRequestDetailsFromCID = async (cid) => {
   try {
     if (!cid) return null;
 
-    const res = await fetch(`http://localhost:5000/api/ipfs/${cid}`);
+    const res = await fetch(`${API_BASE_URL}/api/ipfs/${cid}`);
     const raw = await res.json();
 
     console.log("📦 CID RAW RESPONSE:", cid, raw);
@@ -1821,7 +1822,7 @@ const RegisterBeneficiaryForm = ({ onSuccess }) => {
       setTxStatus("pending");
 
       const res = await fetch(
-        "http://localhost:5000/api/beneficiary/upload-profile",
+        `${API_BASE_URL}/api/beneficiary/upload-profile`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -2308,7 +2309,7 @@ const RegisterMerchantForm = ({ onSuccess }) => {
       setTxHash("");
 
       const res = await fetch(
-        "http://localhost:5000/api/merchant/upload-profile",
+        `${API_BASE_URL}/api/merchant/upload-profile`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -741,7 +741,6 @@ app.post('/api/redemption/proof', upload.single("proof"), async (req, res) => {
  * GET /api/ipfs/:cid
  *
  * This is required for AdminDashboard CID details:
- * fetch(`http://localhost:5000/api/ipfs/${cid}`)
  */
 app.get("/api/ipfs/:cid", async (req, res) => {
   try {
