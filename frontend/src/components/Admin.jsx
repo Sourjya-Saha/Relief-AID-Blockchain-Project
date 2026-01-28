@@ -137,7 +137,7 @@ const statusLabel = (s) => {
   return { text: "REJECTED", color: "red" };
 };
 
-const API_BASE_URL = process.env.VITE_PUBLIC_BACKEND_URL ;
+const API_BASE_URL = import.meta.env.VITE_PUBLIC_BACKEND_URL ;
 // ============================================================
 // ADMIN DASHBOARD
 // ============================================================
