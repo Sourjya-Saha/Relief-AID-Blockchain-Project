@@ -165,7 +165,7 @@ const getChainKey = (chainId) => {
 // BENEFICIARY DASHBOARD
 // ============================================
 
-const API_BASE_URL = process.env.PUBLIC_BACKEND_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.PUBLIC_BACKEND_URL ;
 
 export const BeneficiaryDashboard = () => {
   const { account, chainId } = useWeb3();

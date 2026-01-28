@@ -137,7 +137,7 @@ const statusLabel = (s) => {
   return { text: "REJECTED", color: "red" };
 };
 
-const API_BASE_URL = process.env.PUBLIC_BACKEND_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.PUBLIC_BACKEND_URL ;
 // ============================================================
 // ADMIN DASHBOARD
 // ============================================================
