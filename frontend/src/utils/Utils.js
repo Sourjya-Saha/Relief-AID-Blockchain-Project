@@ -11,7 +11,7 @@ export const constants = {
     "https://rpc-amoy.polygon.technology/",
   EXPLORER_URL:
     import.meta.env.VITE_EXPLORER_URL || "https://amoy.polygonscan.com",
-  BACKEND_URL: import.meta.env.PUBLIC_BACKEND_URL || "http://localhost:5000",
+  BACKEND_URL: import.meta.env.VITE_PUBLIC_BACKEND_URL || "http://localhost:5000",
   IPFS_GATEWAY:
     import.meta.env.VITE_IPFS_GATEWAY || "https://gateway.pinata.cloud/ipfs/",
 
